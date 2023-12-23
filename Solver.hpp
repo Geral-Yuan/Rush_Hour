@@ -345,7 +345,7 @@ public:
                     ret.first=std::make_pair(0,0);
                     ret.second=std::make_pair(0,1);
                     i1=0;
-                    i2=len2;
+                    i2=len1;
                 }else{
                     ret.first=std::make_pair(0,1);
                     ret.second=std::make_pair(1,0);
@@ -368,7 +368,7 @@ public:
         while (idx!=BFS_Q.size()){
             if (solved(BFS_Q[idx].board)){
                 PrintProcess(BFS_Q[idx]);
-                std::cout<<"Puzzle Solved!"<<std::endl;
+                std::cout<<"Puzzle Solved in "<<BFS_Q[idx].dis+1<<" steps !"<<std::endl;
                 return;
             }
             for (int i=0;i<6;++i){
