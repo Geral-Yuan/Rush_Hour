@@ -7,50 +7,68 @@
 namespace RUSH{
 
 class BitBoard{
-    unsigned long long rowMat;
-    unsigned long long colMat;
+    unsigned char rowBits[6];
+    unsigned char colBits[6];
 public:
     int rowCnt[6];
     int colCnt[6];
-    BitBoard():rowMat(0),colMat(0){
+    BitBoard(){
+        memset(rowBits,0,sizeof(rowBits));
+        memset(colBits,0,sizeof(colBits));
         memset(rowCnt,0,sizeof(rowCnt));
         memset(colCnt,0,sizeof(colCnt));
     }
-    BitBoard(const BitBoard &rhs):rowMat(rhs.rowMat),colMat(rhs.colMat){
+    BitBoard(const BitBoard &rhs){
         for (int i=0;i<6;++i){
+            rowBits[i]=rhs.rowBits[i];
+            colBits[i]=rhs.colBits[i];
             rowCnt[i]=rhs.rowCnt[i];
             colCnt[i]=rhs.colCnt[i];
         }
     }
-    unsigned long long &operator[](int idx){
+    unsigned char *operator[](int idx){
         if (idx<0||idx>1) {
             std::cerr<<"Invalid index access"<<std::endl;
             exit(1);
         }
-        if (idx==0) return rowMat;
-        return colMat;
+        if (idx==0) return (unsigned char*)rowBits;
+        return (unsigned char*)colBits;
     }
     bool operator==(const BitBoard &rhs) const{
-        return rowMat==rhs.rowMat&&colMat==rhs.colMat;
+        for (int i=0;i<6;++i)
+            if (rowBits[i]^rhs.rowBits[i])
+                return false;
+        for (int j=0;j<6;++j)
+            if (colBits[j]^rhs.colBits[j])
+                return false;
+        return true;
+    }
+    unsigned long long rowID() const{
+        unsigned long long ret=0;
+        for (int i=0;i<6;++i)
+            ret=ret<<8|rowBits[i];
+        return ret;
+    }
+    unsigned long long colID() const{
+        unsigned long long ret=0;
+        for (int j=0;j<6;++j)
+            ret=ret<<8|colBits[j];
+        return ret;
     }
     void clear(){
-        rowMat=colMat=0;
+        memset(rowBits,0,sizeof(rowBits));
+        memset(colBits,0,sizeof(colBits));
         memset(rowCnt,0,sizeof(rowCnt));
         memset(colCnt,0,sizeof(colCnt));
     }
     bool solved(){
         for (int j=5;j>=0;--j){
-            if (rowMat&(1ull<<((j<<3)+2)))
+            if (colBits[j]&(1<<2))
                 return false;
-            if (colMat&(1ull<<((2<<3)+j)))
+            if (rowBits[2]&(1<<j))
                 return true;
         }
         return false;
-    }
-    void print(){
-        Grid grid;
-        Board2Grid(*this,grid);
-        grid.print();
     }
 };
 
@@ -63,10 +81,10 @@ struct Node{
     }
 };
 
-using MatPair = std::pair<unsigned long long,unsigned long long>;
+using idPair = std::pair<unsigned long long,unsigned long long>;
 
 struct myHash{
-    std::size_t operator()(const MatPair &obj) const{
+    std::size_t operator()(const idPair &obj) const{
         return std::hash<unsigned long long>()(obj.first)+std::hash<unsigned long long>()(obj.second);
     }
 };

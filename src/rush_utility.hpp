@@ -12,10 +12,10 @@ void Grid2Board(Grid &grid, BitBoard &board){
         for (int j=0;j<6;++j)
             if (grid[i][j]){
                 if (isHorizontal(grid,i,j)){
-                    board[0]|=1ull<<((i<<3)+j);
+                    board[0][i]|=1<<j;
                     ++board.rowCnt[i];
                 }else{
-                    board[1]|=1ull<<((j<<3)+i);
+                    board[1][j]|=1<<i;
                     ++board.colCnt[j];
                 }
             }
@@ -35,7 +35,7 @@ void Grid2Board(Grid &grid, BitBoard &board){
             for (int j=0;j<6;++j){
                 if (grid[i][j]==0||grid[i][j]!=grid[i][j+1]) continue;
                 if (grid[i][j+2]==grid[i][j])
-                    board[0]|=1ull<<((i<<3)+7);
+                    board[0][i]|=1<<7;
                 break;
             }
         }
@@ -45,7 +45,7 @@ void Grid2Board(Grid &grid, BitBoard &board){
             for (int i=0;i<6;++i){
                 if (grid[i][j]==0||grid[i][j]!=grid[i+1][j]) continue;
                 if (grid[i+2][j]==grid[i][j])
-                    board[1]|=1ull<<((j<<3)+7);
+                    board[1][j]|=1<<7;
                 break;
             }
         }
@@ -60,7 +60,7 @@ void Board2Grid(BitBoard &board, Grid &grid){
             case 3:{
                 ++num;
                 for (int j=0;j<6;++j)
-                    if (board[0]&(1ull<<((i<<3)+j)))
+                    if (board[0][i]&(1<<j))
                         grid[i][j]=num;
                 break;
             }
@@ -68,7 +68,7 @@ void Board2Grid(BitBoard &board, Grid &grid){
                 ++num;
                 int localCnt=0;
                 for (int j=0;j<6;++j)
-                    if (board[0]&(1ull<<((i<<3)+j))){
+                    if (board[0][i]&(1<<j)){
                         grid[i][j]=num+(localCnt>>1);
                         ++localCnt;
                     }
@@ -78,9 +78,9 @@ void Board2Grid(BitBoard &board, Grid &grid){
             case 5:{
                 ++num;
                 int localCnt=0;
-                int leftLength=(board[0]&(1ull<<((i<<3)+7)))?3:2;
+                int leftLength=(board[0][i]&(1<<7))?3:2;
                 for (int j=0;j<6;++j)
-                    if (board[0]&(1ull<<((i<<3)+j))){
+                    if (board[0][i]&(1<<j)){
                         grid[i][j]=num+(localCnt<leftLength?0:1);
                         ++localCnt;
                     }
@@ -97,7 +97,7 @@ void Board2Grid(BitBoard &board, Grid &grid){
             case 3:{
                 ++num;
                 for (int i=0;i<6;++i)
-                    if (board[1]&(1ull<<((j<<3)+i)))
+                    if (board[1][j]&(1<<i))
                         grid[i][j]=num;
                 break;
             }
@@ -105,7 +105,7 @@ void Board2Grid(BitBoard &board, Grid &grid){
                 ++num;
                 int localCnt=0;
                 for (int i=0;i<6;++i)
-                    if (board[1]&(1ull<<((j<<3)+i))){
+                    if (board[1][j]&(1<<i)){
                         grid[i][j]=num+(localCnt>>1);
                         ++localCnt;
                     }
@@ -115,9 +115,9 @@ void Board2Grid(BitBoard &board, Grid &grid){
             case 5:{
                 ++num;
                 int localCnt=0;
-                int upLength=(board[1]&(1ull<<((j<<3)+7)))?3:2;
+                int upLength=(board[1][j]&(1<<7))?3:2;
                 for (int i=0;i<6;++i)
-                    if (board[1]&(1ull<<((j<<3)+i))){
+                    if (board[1][j]&(1<<i)){
                         grid[i][j]=num+(localCnt<upLength?0:1);
                         ++localCnt;
                     }
