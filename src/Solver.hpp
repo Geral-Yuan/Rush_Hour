@@ -38,6 +38,7 @@ public:
             if (board[0]&(1ull<<((2<<3)+j)))
                 return true;
         }
+        return false;
     }
 
     std::pair<std::pair<int,int>,std::pair<int,int>> getHorizontalMove(BitBoard &board,int i,int &j1,int &len1,int &j2,int &len2){
@@ -183,9 +184,9 @@ public:
     }
 
     void solve(){
-        BFS_Q.push_back(Node{initBoard,0,-1});
+        BFS_Q.push_back(Node{initBoard,0,0});
         vistedNodes.insert(std::make_pair(initBoard[0],initBoard[1]));
-        int idx=0;
+        size_t idx=0;
         while (idx!=BFS_Q.size()){
             if (solved(BFS_Q[idx].board)){
                 PrintProcess(BFS_Q[idx]);

@@ -36,7 +36,7 @@ struct Grid{
 bool legalGrid(int i,int j){ return i>=0&&i<6&&j>=0&&j<6; }
 
 bool isHorizontal(Grid &grid,int i,int j){
-    return legalGrid(i,j-1)&&grid[i][j-1]==grid[i][j]||legalGrid(i,j+1)&&grid[i][j+1]==grid[i][j];
+    return (legalGrid(i,j-1)&&grid[i][j-1]==grid[i][j])||(legalGrid(i,j+1)&&grid[i][j+1]==grid[i][j]);
 }
 
 }

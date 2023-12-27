@@ -1,8 +1,11 @@
+CXX = g++
+CXXFLAGS = -Wall -Wextra -std=c++11
+
 rush:
-	g++ ./src/main.cpp -o main
+	$(CXX) ./src/main.cpp -o main $(CXXFLAGS)
 
 debug:
-	g++ ./src/main.cpp -g -o main
+	$(CXX) ./src/main.cpp -g -o main $(CXXFLAGS)
 
 clean:
 	rm main

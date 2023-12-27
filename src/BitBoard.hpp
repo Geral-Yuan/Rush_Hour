@@ -42,7 +42,7 @@ struct BitBoard{
 struct Node{
     BitBoard board;
     int dis;
-    int last;
+    size_t last;
     bool operator==(const Node &rhs) const{
         return board==rhs.board;
     }
