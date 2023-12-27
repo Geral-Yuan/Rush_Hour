@@ -21,24 +21,8 @@ public:
         Grid2Board(grid, initBoard);
     }
 
-    void Print_Board(BitBoard &board){
-        Grid grid;
-        Board2Grid(board,grid);
-        grid.print();
-    }
-
     void Print_initBoard(){
-        Print_Board(initBoard);
-    }
-
-    bool solved(BitBoard &board){
-        for (int j=5;j>=0;--j){
-            if (board[1]&(1ull<<((j<<3)+2)))
-                return false;
-            if (board[0]&(1ull<<((2<<3)+j)))
-                return true;
-        }
-        return false;
+        initBoard.print();
     }
 
     std::pair<std::pair<int,int>,std::pair<int,int>> getHorizontalMove(BitBoard &board,int i,int &j1,int &len1,int &j2,int &len2){
@@ -188,7 +172,7 @@ public:
         vistedNodes.insert(std::make_pair(initBoard[0],initBoard[1]));
         size_t idx=0;
         while (idx!=BFS_Q.size()){
-            if (solved(BFS_Q[idx].board)){
+            if (BFS_Q[idx].board.solved()){
                 PrintProcess(BFS_Q[idx]);
                 std::cout<<"Puzzle Solved in "<<BFS_Q[idx].dis+1<<" steps !"<<std::endl;
                 return;
@@ -304,12 +288,12 @@ public:
     void PrintProcess(Node &node){
         if (node.dis==0){
             putchar('\n');
-            Print_Board(node.board);
+            node.board.print();
             putchar('\n');
         }else{
             PrintProcess(BFS_Q[node.last]);
             putchar('\n');
-            Print_Board(node.board);
+            node.board.print();
             putchar('\n');
         }
     }

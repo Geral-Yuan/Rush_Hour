@@ -6,9 +6,10 @@
 
 namespace RUSH{
 
-struct BitBoard{
+class BitBoard{
     unsigned long long rowMat;
     unsigned long long colMat;
+public:
     int rowCnt[6];
     int colCnt[6];
     BitBoard():rowMat(0),colMat(0){
@@ -36,6 +37,20 @@ struct BitBoard{
         rowMat=colMat=0;
         memset(rowCnt,0,sizeof(rowCnt));
         memset(colCnt,0,sizeof(colCnt));
+    }
+    bool solved(){
+        for (int j=5;j>=0;--j){
+            if (rowMat&(1ull<<((j<<3)+2)))
+                return false;
+            if (colMat&(1ull<<((2<<3)+j)))
+                return true;
+        }
+        return false;
+    }
+    void print(){
+        Grid grid;
+        Board2Grid(*this,grid);
+        grid.print();
     }
 };
 

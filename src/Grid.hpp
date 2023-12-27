@@ -8,6 +8,7 @@ namespace RUSH{
 
 struct Grid{
     int grid[6][6];
+public:
     int *operator[](int idx){
         if (idx<0||idx>=6) {
             std::cerr<<"Invalid index access"<<std::endl;
