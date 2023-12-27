@@ -1,216 +1,37 @@
+#ifndef SOLVER_HPP
+#define SOLVER_HPP
+
 #include <utility>
 #include <vector>
 #include <unordered_set>
-#include <iostream>
-#include <cstring>
-#include <functional>
+#include "rush_utility.hpp"
+
+namespace RUSH{
 
 class Solver {
-    struct bitBoard{
-        unsigned long long rowMat;
-        unsigned long long colMat;
-        int rowCnt[6];
-        int colCnt[6];
-        bitBoard():rowMat(0),colMat(0){
-            memset(rowCnt,0,sizeof(rowCnt));
-            memset(colCnt,0,sizeof(colCnt));
-        }
-        bitBoard(const bitBoard &rhs):rowMat(rhs.rowMat),colMat(rhs.colMat){
-            for (int i=0;i<6;++i){
-                rowCnt[i]=rhs.rowCnt[i];
-                colCnt[i]=rhs.colCnt[i];
-            }
-        }
-        unsigned long long &operator[](int idx){
-            if (idx<0||idx>1) {
-                std::cerr<<"Invalid index access"<<std::endl;
-                exit(1);
-            }
-            if (idx==0) return rowMat;
-            return colMat;
-        }
-        bool operator==(const bitBoard &rhs) const{
-            return rowMat==rhs.rowMat&&colMat==rhs.colMat;
-        }
-    };
-    struct Node{
-        bitBoard board;
-        int dis;
-        int last;
-        bool operator==(const Node &rhs) const{
-            return board==rhs.board;
-        }
-    };
-    using MatPair = std::pair<unsigned long long,unsigned long long>;
-    struct myHash{
-        std::size_t operator()(const MatPair &obj) const{
-            return std::hash<unsigned long long>()(obj.first)+std::hash<unsigned long long>()(obj.second);
-        }
-    };
-
 private:
-    bitBoard initBoard;
+    BitBoard initBoard;
     std::vector<Node> BFS_Q;
     std::unordered_set<MatPair,myHash> vistedNodes;
 
 public:
     Solver(){
-        int grid[6][6];
-        for (int i=0;i<6;++i)
-            for (int j=0;j<6;++j)
-                std::cin>>grid[i][j];
+        Grid grid;
+        grid.getInput();
         Grid2Board(grid, initBoard);
     }
 
-    bool legalGrid(int i,int j){ return i>=0&&i<6&&j>=0&&j<6; }
-
-    bool isHorizontal(const int grid[6][6],int i,int j){
-        return legalGrid(i,j-1)&&grid[i][j-1]==grid[i][j]||legalGrid(i,j+1)&&grid[i][j+1]==grid[i][j];
-    }
-
-    void Grid2Board(const int grid[6][6], bitBoard &board){
-        for (int i=0;i<6;++i)
-            for (int j=0;j<6;++j)
-                if (grid[i][j]){
-                    if (isHorizontal(grid,i,j)){
-                        board[0]|=1ull<<((i<<3)+j);
-                        ++board.rowCnt[i];
-                    }else{
-                        board[1]|=1ull<<((j<<3)+i);
-                        ++board.colCnt[j];
-                    }
-                }
-
-        for (int i=0;i<6;++i)
-            if (board.rowCnt[i]==6||board.colCnt[i]==6){
-                std::cerr<<"Invalid board with a stuck row or column"<<std::endl;
-                exit(1);
-            }
-        if (board.rowCnt[2]!=2){
-            std::cerr<<"Invalid board as not exactly a car in exit row"<<std::endl;
-            exit(1);
-        }
-        for (int i=0;i<6;++i)
-            if (board.rowCnt[i]==5){
-                // board[0]|=1ull<<((i<<3)+6);
-                for (int j=0;j<6;++j){
-                    if (grid[i][j]==0||grid[i][j]!=grid[i][j+1]) continue;
-                    if (grid[i][j+2]==grid[i][j])
-                        board[0]|=1ull<<((i<<3)+7);
-                    break;
-                }
-            }
-        for (int j=0;j<6;++j)
-            if (board.colCnt[j]==5){
-                // board[1]|=1ull<<((j<<3)+6);
-                for (int i=0;i<6;++i){
-                    if (grid[i][j]==0||grid[i][j]!=grid[i+1][j]) continue;
-                    if (grid[i+2][j]==grid[i][j])
-                        board[1]|=1ull<<((j<<3)+7);
-                    break;
-                }
-            }
-    }
-
-    void Board2Grid(bitBoard &board, int grid[6][6]){
-        int num=0;
-        for (int i=0;i<6;++i){
-            switch (board.rowCnt[i]){
-                case 2:
-                case 3:{
-                    ++num;
-                    for (int j=0;j<6;++j)
-                        if (board[0]&(1ull<<((i<<3)+j)))
-                            grid[i][j]=num;
-                    break;
-                }
-                case 4:{
-                    ++num;
-                    int localCnt=0;
-                    for (int j=0;j<6;++j)
-                        if (board[0]&(1ull<<((i<<3)+j))){
-                            grid[i][j]=num+(localCnt>>1);
-                            ++localCnt;
-                        }
-                    ++num;
-                    break;
-                }
-                case 5:{
-                    ++num;
-                    int localCnt=0;
-                    int leftLength=(board[0]&(1ull<<((i<<3)+7)))?3:2;
-                    for (int j=0;j<6;++j)
-                        if (board[0]&(1ull<<((i<<3)+j))){
-                            grid[i][j]=num+(localCnt<leftLength?0:1);
-                            ++localCnt;
-                        }
-                    ++num;
-                    break;
-                }
-                default:
-                    break;
-            }
-        }
-        for (int j=0;j<6;++j){
-            switch (board.colCnt[j]){
-                case 2:
-                case 3:{
-                    ++num;
-                    for (int i=0;i<6;++i)
-                        if (board[1]&(1ull<<((j<<3)+i)))
-                            grid[i][j]=num;
-                    break;
-                }
-                case 4:{
-                    ++num;
-                    int localCnt=0;
-                    for (int i=0;i<6;++i)
-                        if (board[1]&(1ull<<((j<<3)+i))){
-                            grid[i][j]=num+(localCnt>>1);
-                            ++localCnt;
-                        }
-                    ++num;
-                    break;
-                }
-                case 5:{
-                    ++num;
-                    int localCnt=0;
-                    int upLength=(board[1]&(1ull<<((j<<3)+7)))?3:2;
-                    for (int i=0;i<6;++i)
-                        if (board[1]&(1ull<<((j<<3)+i))){
-                            grid[i][j]=num+(localCnt<upLength?0:1);
-                            ++localCnt;
-                        }
-                    ++num;
-                    break;
-                }
-                default:
-                    break;
-            }
-        }
-    }
-
-    void Print(int grid[6][6]){
-        for (int i=0;i<6;++i){
-            for (int j=0;j<6;++j){
-                std::cout<<grid[i][j]<<" ";
-            }
-            std::cout<<std::endl;
-        }
-    }
-
-    void Print_Board(bitBoard &board){
-        int grid[6][6];
-        memset(grid,0,sizeof(grid));
+    void Print_Board(BitBoard &board){
+        Grid grid;
         Board2Grid(board,grid);
-        Print(grid);
+        grid.print();
     }
 
     void Print_initBoard(){
         Print_Board(initBoard);
     }
 
-    bool solved(bitBoard &board){
+    bool solved(BitBoard &board){
         for (int j=5;j>=0;--j){
             if (board[1]&(1ull<<((j<<3)+2)))
                 return false;
@@ -219,7 +40,7 @@ public:
         }
     }
 
-    std::pair<std::pair<int,int>,std::pair<int,int>> getHorizontalMove(bitBoard &board,int i,int &j1,int &len1,int &j2,int &len2){
+    std::pair<std::pair<int,int>,std::pair<int,int>> getHorizontalMove(BitBoard &board,int i,int &j1,int &len1,int &j2,int &len2){
         std::pair<std::pair<int,int>,std::pair<int,int>> ret;
         switch (board.rowCnt[i]){
             case 2:
@@ -290,7 +111,7 @@ public:
         return ret;
     }
 
-    std::pair<std::pair<int,int>,std::pair<int,int>> getVerticalMove(bitBoard &board,int j,int &i1,int &len1,int &i2,int &len2){
+    std::pair<std::pair<int,int>,std::pair<int,int>> getVerticalMove(BitBoard &board,int j,int &i1,int &len1,int &i2,int &len2){
         std::pair<std::pair<int,int>,std::pair<int,int>> ret;
         switch (board.colCnt[j]){
             case 2:
@@ -376,7 +197,7 @@ public:
                 auto movePair=getHorizontalMove(BFS_Q[idx].board,i,j1,len1,j2,len2);
                 if (j1>=0){
                     for (int k=1;k<=movePair.first.first;++k){
-                        bitBoard newBoard(BFS_Q[idx].board);
+                        BitBoard newBoard(BFS_Q[idx].board);
                         for (int j=j1;j<j1+len1;++j){
                             newBoard[0]&=~(1ull<<((i<<3)+j));
                             newBoard[0]|=1ull<<((i<<3)+j-k);
@@ -387,7 +208,7 @@ public:
                         vistedNodes.insert(id);
                     }
                     for (int k=1;k<=movePair.first.second;++k){
-                        bitBoard newBoard(BFS_Q[idx].board);
+                        BitBoard newBoard(BFS_Q[idx].board);
                         for (int j=j1+len1-1;j>=j1;--j){
                             newBoard[0]&=~(1ull<<((i<<3)+j));
                             newBoard[0]|=1ull<<((i<<3)+j+k);
@@ -400,7 +221,7 @@ public:
                 }
                 if (j2>=0){
                     for (int k=1;k<=movePair.second.first;++k){
-                        bitBoard newBoard(BFS_Q[idx].board);
+                        BitBoard newBoard(BFS_Q[idx].board);
                         for (int j=j2;j<j2+len2;++j){
                             newBoard[0]&=~(1ull<<((i<<3)+j));
                             newBoard[0]|=1ull<<((i<<3)+j-k);
@@ -411,7 +232,7 @@ public:
                         vistedNodes.insert(id);
                     }
                     for (int k=1;k<=movePair.second.second;++k){
-                        bitBoard newBoard(BFS_Q[idx].board);
+                        BitBoard newBoard(BFS_Q[idx].board);
                         for (int j=j2+len2-1;j>=j2;--j){
                             newBoard[0]&=~(1ull<<((i<<3)+j));
                             newBoard[0]|=1ull<<((i<<3)+j+k);
@@ -428,7 +249,7 @@ public:
                 auto movePair=getVerticalMove(BFS_Q[idx].board,j,i1,len1,i2,len2);
                 if (i1>=0){
                     for (int k=1;k<=movePair.first.first;++k){
-                        bitBoard newBoard(BFS_Q[idx].board);
+                        BitBoard newBoard(BFS_Q[idx].board);
                         for (int i=i1;i<i1+len1;++i){
                             newBoard[1]&=~(1ull<<((j<<3)+i));
                             newBoard[1]|=1ull<<((j<<3)+i-k);
@@ -439,7 +260,7 @@ public:
                         vistedNodes.insert(id);
                     }
                     for (int k=1;k<=movePair.first.second;++k){
-                        bitBoard newBoard(BFS_Q[idx].board);
+                        BitBoard newBoard(BFS_Q[idx].board);
                         for (int i=i1+len1-1;i>=i1;--i){
                             newBoard[1]&=~(1ull<<((j<<3)+i));
                             newBoard[1]|=1ull<<((j<<3)+i+k);
@@ -452,7 +273,7 @@ public:
                 }
                 if (i2>=0){
                     for (int k=1;k<=movePair.second.first;++k){
-                        bitBoard newBoard(BFS_Q[idx].board);
+                        BitBoard newBoard(BFS_Q[idx].board);
                         for (int i=i2;i<i2+len2;++i){
                             newBoard[1]&=~(1ull<<((j<<3)+i));
                             newBoard[1]|=1ull<<((j<<3)+i-k);
@@ -463,7 +284,7 @@ public:
                         vistedNodes.insert(id);
                     }
                     for (int k=1;k<=movePair.second.second;++k){
-                        bitBoard newBoard(BFS_Q[idx].board);
+                        BitBoard newBoard(BFS_Q[idx].board);
                         for (int i=i2+len2-1;i>=i2;--i){
                             newBoard[1]&=~(1ull<<((j<<3)+i));
                             newBoard[1]|=1ull<<((j<<3)+i+k);
@@ -492,3 +313,7 @@ public:
         }
     }
 };
+
+}
+
+#endif
