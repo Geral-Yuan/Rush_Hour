@@ -61,7 +61,35 @@ public:
         memset(rowCnt,0,sizeof(rowCnt));
         memset(colCnt,0,sizeof(colCnt));
     }
-    bool solved(){
+    int first_bit(int m, int k) const{
+        if (m==0){
+            for (int j=0;j<6;++j)
+                if (rowBits[k]&(1<<j))
+                    return j;
+            return -1;
+        }
+        for (int i=0;i<6;++i)
+            if (colBits[k]&(1<<i))
+                return i;
+        return -1;
+    }
+    int last_bit(int m,int k) const{
+        if (m==0){
+            for (int j=5;j>=0;--j)
+                if (rowBits[k]&(1<<j))
+                    return j;
+            return -1;
+        }
+        for (int i=5;i>=0;--i)
+            if (colBits[k]&(1<<i))
+                return i;
+        return -1;
+    }
+    bool conflict(int m,int i,int j) const{
+        if (m) std::swap(i,j);
+        return (rowBits[i]&(1<<j))&&(colBits[j]&(1<<i));
+    }
+    bool solved() const{
         for (int j=5;j>=0;--j){
             if (colBits[j]&(1<<2))
                 return false;
@@ -76,6 +104,7 @@ struct Node{
     BitBoard board;
     int dis;
     size_t last;
+    Node(BitBoard &_board,int _dis,size_t _last):board(_board),dis(_dis),last(_last){}
     bool operator==(const Node &rhs) const{
         return board==rhs.board;
     }
