@@ -33,8 +33,8 @@ class RushBoard : public Fl_Widget {
     size_t idx;
 
    public:
-    RushBoard(int X, int Y, int W, int H, const std::vector<BitBoard> &B=std::vector<BitBoard>()) : Fl_Widget(X, Y, W, H), boards(B) {
-        idx=boards.size()-1;
+    RushBoard(int X, int Y, int W, int H, const std::vector<BitBoard> &B = std::vector<BitBoard>()) : Fl_Widget(X, Y, W, H), boards(B) {
+        idx = boards.size() - 1;
     }
     void drawBoard(int X, int Y, int size) const {
         for (int i = 0; i < 6; ++i)
@@ -96,8 +96,8 @@ class RushBoard : public Fl_Widget {
             }
         drawVehicle(startX, startY, cellSize, 0, 2, boards[idx].first_bit(0, 2), 2, 0);
     }
-    
-    void update(){
+
+    void update() {
         if (idx) --idx;
         this->redraw();
     }
@@ -114,8 +114,8 @@ class RushWindow : public Fl_Window {
 };
 
 void timer_callback(void *widget) {
-    ((RushBoard*)widget)->update(); // update
-    Fl::repeat_timeout(1.0/2.0, timer_callback, widget); // recall each 0.5s
+    ((RushBoard *)widget)->update();                        // update
+    Fl::repeat_timeout(1.0 / 2.0, timer_callback, widget);  // recall each 0.5s
 }
 
 }  // namespace RUSH
