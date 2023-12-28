@@ -3,6 +3,7 @@
 
 #include <FL/Fl.H>
 #include <FL/Fl_Window.H>
+#include <FL/Fl_Button.H>
 #include <FL/fl_draw.H>
 #include <algorithm>
 #include <vector>
@@ -28,6 +29,9 @@ Fl_Color colors[] = {
     FL_DARK2,
     FL_GRAY0};
 
+void timer_callback(void *widget);
+void start_callback(Fl_Widget *widget, void *);
+
 class RushBoard : public Fl_Widget {
     std::vector<BitBoard> boards;
     size_t idx;
@@ -36,17 +40,22 @@ class RushBoard : public Fl_Widget {
     RushBoard(int X, int Y, int W, int H, const std::vector<BitBoard> &B = std::vector<BitBoard>()) : Fl_Widget(X, Y, W, H), boards(B) {
         idx = boards.size() - 1;
     }
-    void drawBoard(int X, int Y, int size) const {
-        for (int i = 0; i < 6; ++i)
-            for (int j = 0; j < 6; ++j) {
-                int x = X + j * size;
-                int y = Y + i * size;
-                fl_color(FL_WHITE);
-                fl_rectf(x, y, size, size);
-                fl_color(FL_BLACK);
-                fl_rect(x, y, size, size);
-            }
+
+    size_t get_idx() const {
+        return idx;
     }
+
+    void drawBoard(int startX, int startY, int side, int cellSize) const {
+        fl_color(FL_BLACK);
+        fl_line_style(FL_SOLID, 3);
+        fl_line(startX, startY, startX, startY + side);
+        fl_line(startX, startY, startX + side, startY);
+        fl_line(startX, startY + side, startX + side, startY + side);
+        fl_line(startX + side, startY, startX + side, startY + cellSize * 2);
+        fl_line(startX + side, startY + cellSize * 3, startX + side, startY + cellSize * 6);
+        fl_line_style(0);
+    }
+
     void drawVehicle(int X, int Y, int size, int m, int k, int l, int len, int idx) const {
         int width = 0.8 * size;
         int x = l * size + (size - width) / 2;
@@ -63,11 +72,12 @@ class RushBoard : public Fl_Widget {
     void draw() override {
         int width = this->w();
         int height = this->h();
-        int side = std::min(width, height);
+        int side = std::min(width / 3, height / 2);
+        side *= 2;
         int cellSize = side / 6;
-        int startX = (width - side) / 2;
+        int startX = (width - side * 3 / 2) / 2;
         int startY = (height - side) / 2;
-        drawBoard(startX, startY, cellSize);
+        drawBoard(startX, startY, side, cellSize);
         int colorIDX = 0;
         for (int m = 0; m < 2; ++m)
             for (int k = 0; k < 6; ++k) {
@@ -99,23 +109,95 @@ class RushBoard : public Fl_Widget {
 
     void update() {
         if (idx) --idx;
-        this->redraw();
+    }
+};
+
+class BackgroundBoard : public Fl_Widget {
+   public:
+    BackgroundBoard(int X, int Y, int W, int H) : Fl_Widget(X, Y, W, H) {}
+    void draw() override {
+        int winWidth = this->w();
+        int winHeight = this->h();
+        int side = std::min(winWidth / 3, winHeight / 2);
+        int width = side * 3;
+        int height = side * 2;
+        int startX = (winWidth - width) / 2;
+        int startY = (winHeight - height) / 2;
+        fl_color(FL_WHITE);
+        fl_rectf(startX, startY, width, height);
+    }
+};
+
+class StartButton : public Fl_Button {
+    bool called;
+
+   public:
+    StartButton(int X, int Y, int W, int H, const char *L) : Fl_Button(X, Y, W, H, L), called(false) {}
+    void Call() {
+        called = true;
+    }
+    bool isCalled() const {
+        return called;
+    }
+    void draw() {
+        int winWidth = this->w();
+        int winHeight = this->h();
+        int side = std::min(winWidth / 3, winHeight / 2);
+        int startX = (winWidth - 3 * side) / 2 + side * 2 + side / 4;
+        int startY = (winHeight - 2 * side) / 2 + side / 4;
+        int width = side / 2;
+        int height = side / 4;
+        fl_color(FL_GRAY);
+        fl_rectf(startX, startY, width, height);
+        fl_color(FL_BLACK);
+        fl_font(FL_HELVETICA_BOLD, side / 12);
+        fl_draw(label(), startX, startY, width, height, FL_ALIGN_CENTER);
     }
 };
 
 class RushWindow : public Fl_Window {
    public:
-    RushBoard *rushboard;
+    BackgroundBoard *backgroundBoard;
+    RushBoard *rushBoard;
+    StartButton *startButton;
 
     RushWindow(int W, int H, const char *L = 0, const std::vector<BitBoard> &B = std::vector<BitBoard>()) : Fl_Window(W, H, L) {
-        rushboard = new RushBoard(0, 0, W, H, B);
+        backgroundBoard = new BackgroundBoard(0, 0, W, H);
+        rushBoard = new RushBoard(0, 0, W, H, B);
+        startButton = new StartButton(0, 0, W, H, "SOLVE");
+        startButton->callback(start_callback);
         this->resizable(this);
+    }
+    ~RushWindow() {
+        delete backgroundBoard;
+        delete rushBoard;
+    }
+    void update() {
+        rushBoard->update();
+        this->redraw();
+    }
+    void draw() {
+        backgroundBoard->draw();
+        rushBoard->draw();
+        startButton->draw();
     }
 };
 
 void timer_callback(void *widget) {
-    ((RushBoard *)widget)->update();                        // update
-    Fl::repeat_timeout(1.0 / 2.0, timer_callback, widget);  // recall each 0.5s
+    RushWindow *window = (RushWindow *)widget;
+    window->update();
+    if (window->rushBoard->get_idx() > 0)
+        Fl::repeat_timeout(1.0 / 5.0, timer_callback, widget);
+    else
+        window->startButton->label("Solved!");
+}
+
+void start_callback(Fl_Widget *widget, void *) {
+    StartButton *button = (StartButton *)widget;
+    if (button->isCalled()) return;
+    button->Call();
+    Fl::add_timeout(1.0 / 5.0, timer_callback, button->window());
+    button->label("Solving...");
 }
 
 }  // namespace RUSH
