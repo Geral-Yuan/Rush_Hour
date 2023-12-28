@@ -26,6 +26,16 @@ public:
             colCnt[i]=rhs.colCnt[i];
         }
     }
+    BitBoard &operator=(const BitBoard &rhs){
+        if (this==&rhs) return *this;
+        for (int i=0;i<6;++i){
+            rowBits[i]=rhs.rowBits[i];
+            colBits[i]=rhs.colBits[i];
+            rowCnt[i]=rhs.rowCnt[i];
+            colCnt[i]=rhs.colCnt[i];
+        }
+        return *this;
+    }
     unsigned char *operator[](int idx){
         if (idx<0||idx>1) {
             std::cerr<<"Invalid index access"<<std::endl;

@@ -64,15 +64,20 @@ public:
         } while (1);
     }
 
-    void solve(){
+    std::vector<BitBoard> &solve(){
+        static std::vector<BitBoard> ans;
         BFS_Q.emplace_back(Node(initBoard,0,0));
         visitedNodes.insert(std::make_pair(initBoard.rowID(),initBoard.colID()));
         size_t idx=0;
         while (idx!=BFS_Q.size()){
             if (BFS_Q[idx].board.solved()){
-                PrintProcess(BFS_Q[idx]);
-                std::cout<<"Puzzle Solved in "<<BFS_Q[idx].dis+1<<" steps!"<<std::endl;
-                return;
+                do{
+                    ans.push_back(BFS_Q[idx].board);
+                    idx=BFS_Q[idx].last;
+                }while (BFS_Q[idx].dis!=0);
+                // PrintProcess(BFS_Q[idx]);
+                // std::cout<<"Puzzle solved in "<<BFS_Q[idx].dis+1<<" steps!"<<std::endl;
+                return ans;
             }
             for (int m=0;m<2;++m)
                 for (int k=0;k<6;++k){
@@ -127,6 +132,7 @@ public:
                 }
             ++idx;
         }
+        return ans;
     }
 
     void PrintProcess(Node &node){
