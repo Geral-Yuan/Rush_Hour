@@ -131,13 +131,35 @@ class SolveButton : public Fl_Button {
     }
 };
 
+class StepLabel : public Fl_Box {
+    size_t step;
+
+   public:
+    StepLabel(int X, int Y, int W, int H, const char *L = 0, size_t _step = 0) : Fl_Box(X, Y, W, H, L), step(_step) {}
+
+    void draw() override {
+        int startX = x(), startY = y();
+        int width = w(), height = h();
+        fl_color(FL_WHITE);
+        fl_rectf(startX, startY, width, height);
+        fl_color(FL_BLACK);
+        fl_font(FL_HELVETICA_BOLD, width / 6);
+        label((std::to_string(step) + " steps").c_str());
+        fl_draw(label(), startX, startY, width, height, FL_ALIGN_CENTER);
+    };
+
+    void update() {
+        ++step;
+    }
+};
+
 class RushWindow : public Fl_Window {
    public:
     Fl_PNG_Image *backgroundImage;
     Fl_Box *background;
     RushBoard *rushBoard;
     SolveButton *solveButton;
-    Fl_Box *stepLabel;
+    StepLabel *stepLabel;
 
     RushWindow(int W, int H, const char *L = 0, const std::vector<BitBoard> &B = std::vector<BitBoard>()) : Fl_Window(W, H, L) {
         backgroundImage = new Fl_PNG_Image("./assets/Background.png");
@@ -145,6 +167,10 @@ class RushWindow : public Fl_Window {
         background->image(backgroundImage->copy(W, H));
         rushBoard = new RushBoard(0, 0, W, H, B);
         solveButton = new SolveButton(0, 0, W, H, "Solve");
+        stepLabel = new StepLabel(0, 0, W, H, "0 steps");
+        stepLabel->labelfont(FL_BOLD);
+        stepLabel->labelcolor(FL_BLUE);
+        stepLabel->color(FL_WHITE);
         solveButton->callback(start_callback);
         this->end();
         this->show();
@@ -156,10 +182,12 @@ class RushWindow : public Fl_Window {
         delete background;
         delete rushBoard;
         delete solveButton;
+        delete stepLabel;
     }
 
     void update() {
         rushBoard->update();
+        stepLabel->update();
         this->redraw();
     }
 
@@ -175,6 +203,7 @@ class RushWindow : public Fl_Window {
         background->image(backgroundImage->copy(canvas_W, canvas_H));
         rushBoard->resize(canvas_X, canvas_Y, boardSide, boardSide);
         solveButton->resize(canvas_X + canvas_W - side * 3 / 4, canvas_Y + side / 4, side / 2, side / 4);
+        stepLabel->resize(canvas_X + canvas_W - side * 3 / 4, canvas_Y + side * 3 / 2, side / 2, side / 4);
     }
 };
 
