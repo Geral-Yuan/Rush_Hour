@@ -1,6 +1,6 @@
 CXX = g++
 CXXFLAGS = -Wall -Wextra -std=c++11
-FLTKFLAGS = -lfltk
+FLTKFLAGS = -lfltk -lfltk_images
 
 rush:
 	$(CXX) ./src/main.cpp -o main $(CXXFLAGS) $(FLTKFLAGS)

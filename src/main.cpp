@@ -7,6 +7,5 @@ int main() {
     Solver s;
     std::vector<BitBoard> solution(s.solve());
     RushWindow window(1200, 800, "Rush Hour", solution);
-    window.show();
     return Fl::run();
 }

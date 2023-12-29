@@ -5,6 +5,7 @@
 #include <FL/Fl_Window.H>
 #include <FL/Fl_Button.H>
 #include <FL/Fl_Box.H>
+#include <FL/Fl_PNG_Image.H>
 #include <FL/fl_draw.H>
 #include <algorithm>
 #include <vector>
@@ -122,7 +123,7 @@ class SolveButton : public Fl_Button {
     void draw() override {
         int startX = x(), startY = y();
         int width = w(), height = h();
-        fl_color(FL_GRAY);
+        fl_color(FL_WHITE);
         fl_rectf(startX, startY, width, height);
         fl_color(FL_BLACK);
         fl_font(FL_HELVETICA_BOLD, width / 6);
@@ -132,35 +133,48 @@ class SolveButton : public Fl_Button {
 
 class RushWindow : public Fl_Window {
    public:
+    Fl_PNG_Image *backgroundImage;
+    Fl_Box *background;
     RushBoard *rushBoard;
     SolveButton *solveButton;
+    Fl_Box *stepLabel;
 
     RushWindow(int W, int H, const char *L = 0, const std::vector<BitBoard> &B = std::vector<BitBoard>()) : Fl_Window(W, H, L) {
+        backgroundImage = new Fl_PNG_Image("./assets/Background.png");
+        background = new Fl_Box(0, 0, W, H);
+        background->image(backgroundImage->copy(W, H));
         rushBoard = new RushBoard(0, 0, W, H, B);
         solveButton = new SolveButton(0, 0, W, H, "Solve");
         solveButton->callback(start_callback);
+        this->end();
+        this->show();
     }
+
     ~RushWindow() {
+        delete backgroundImage;
+        delete background->image();
+        delete background;
         delete rushBoard;
         delete solveButton;
     }
+
     void update() {
         rushBoard->update();
         this->redraw();
     }
-    void draw() override {
+
+    void resize(int X, int Y, int W, int H) override {
+        Fl_Window::resize(X, Y, W, H);
         int win_W = w(), win_H = h();
         int side = std::min(win_W / 3, win_H / 2);
         int canvas_X = (win_W - 3 * side) / 2, canvas_Y = (win_H - 2 * side) / 2;
         int canvas_W = side * 3, canvas_H = side * 2;
-        fl_color(FL_WHITE);
-        fl_rectf(canvas_X, canvas_Y, canvas_W, canvas_H);
-        rushBoard->position(canvas_X, canvas_Y);
-        rushBoard->size(canvas_H, canvas_H);
-        rushBoard->draw();
-        solveButton->position(canvas_X + side * 2 + side / 4, canvas_Y + side / 4);
-        solveButton->size(side / 2, side / 4);
-        solveButton->draw();
+        int boardSide = canvas_H;
+        delete background->image();
+        background->resize(canvas_X, canvas_Y, canvas_W, canvas_H);
+        background->image(backgroundImage->copy(canvas_W, canvas_H));
+        rushBoard->resize(canvas_X, canvas_Y, boardSide, boardSide);
+        solveButton->resize(canvas_X + canvas_W - side * 3 / 4, canvas_Y + side / 4, side / 2, side / 4);
     }
 };
 
