@@ -4,6 +4,7 @@
 #include <FL/Fl.H>
 #include <FL/Fl_Window.H>
 #include <FL/Fl_Button.H>
+#include <FL/Fl_Box.H>
 #include <FL/fl_draw.H>
 #include <algorithm>
 #include <vector>
@@ -70,13 +71,8 @@ class RushBoard : public Fl_Widget {
     }
 
     void draw() override {
-        int width = this->w();
-        int height = this->h();
-        int side = std::min(width / 3, height / 2);
-        side *= 2;
-        int cellSize = side / 6;
-        int startX = (width - side * 3 / 2) / 2;
-        int startY = (height - side) / 2;
+        int startX = x(), startY = y();
+        int side = w(), cellSize = side / 6;
         drawBoard(startX, startY, side, cellSize);
         int colorIDX = 0;
         for (int m = 0; m < 2; ++m)
@@ -112,74 +108,59 @@ class RushBoard : public Fl_Widget {
     }
 };
 
-class BackgroundBoard : public Fl_Widget {
-   public:
-    BackgroundBoard(int X, int Y, int W, int H) : Fl_Widget(X, Y, W, H) {}
-    void draw() override {
-        int winWidth = this->w();
-        int winHeight = this->h();
-        int side = std::min(winWidth / 3, winHeight / 2);
-        int width = side * 3;
-        int height = side * 2;
-        int startX = (winWidth - width) / 2;
-        int startY = (winHeight - height) / 2;
-        fl_color(FL_WHITE);
-        fl_rectf(startX, startY, width, height);
-    }
-};
-
-class StartButton : public Fl_Button {
+class SolveButton : public Fl_Button {
     bool called;
 
    public:
-    StartButton(int X, int Y, int W, int H, const char *L) : Fl_Button(X, Y, W, H, L), called(false) {}
+    SolveButton(int X, int Y, int W, int H, const char *L) : Fl_Button(X, Y, W, H, L), called(false) {}
     void Call() {
         called = true;
     }
     bool isCalled() const {
         return called;
     }
-    void draw() {
-        int winWidth = this->w();
-        int winHeight = this->h();
-        int side = std::min(winWidth / 3, winHeight / 2);
-        int startX = (winWidth - 3 * side) / 2 + side * 2 + side / 4;
-        int startY = (winHeight - 2 * side) / 2 + side / 4;
-        int width = side / 2;
-        int height = side / 4;
+    void draw() override {
+        int startX = x(), startY = y();
+        int width = w(), height = h();
         fl_color(FL_GRAY);
         fl_rectf(startX, startY, width, height);
         fl_color(FL_BLACK);
-        fl_font(FL_HELVETICA_BOLD, side / 12);
+        fl_font(FL_HELVETICA_BOLD, width / 6);
         fl_draw(label(), startX, startY, width, height, FL_ALIGN_CENTER);
     }
 };
 
 class RushWindow : public Fl_Window {
    public:
-    BackgroundBoard *backgroundBoard;
     RushBoard *rushBoard;
-    StartButton *startButton;
+    SolveButton *solveButton;
 
     RushWindow(int W, int H, const char *L = 0, const std::vector<BitBoard> &B = std::vector<BitBoard>()) : Fl_Window(W, H, L) {
-        backgroundBoard = new BackgroundBoard(0, 0, W, H);
         rushBoard = new RushBoard(0, 0, W, H, B);
-        startButton = new StartButton(0, 0, W, H, "SOLVE");
-        startButton->callback(start_callback);
-        this->resizable(this);
+        solveButton = new SolveButton(0, 0, W, H, "Solve");
+        solveButton->callback(start_callback);
     }
     ~RushWindow() {
-        delete backgroundBoard;
         delete rushBoard;
+        delete solveButton;
     }
     void update() {
         rushBoard->update();
         this->redraw();
     }
-    void draw() {
-        backgroundBoard->draw();
+    void draw() override {
+        int win_W = w(), win_H = h();
+        int side = std::min(win_W / 3, win_H / 2);
+        int canvas_X = (win_W - 3 * side) / 2, canvas_Y = (win_H - 2 * side) / 2;
+        int canvas_W = side * 3, canvas_H = side * 2;
+        fl_color(FL_WHITE);
+        fl_rectf(canvas_X, canvas_Y, canvas_W, canvas_H);
+        rushBoard->position(canvas_X, canvas_Y);
+        rushBoard->size(canvas_H, canvas_H);
         rushBoard->draw();
-        startButton->draw();
+        solveButton->position(canvas_X + side * 2 + side / 4, canvas_Y + side / 4);
+        solveButton->size(side / 2, side / 4);
+        solveButton->draw();
     }
 };
 
@@ -189,11 +170,11 @@ void timer_callback(void *widget) {
     if (window->rushBoard->get_idx() > 0)
         Fl::repeat_timeout(1.0 / 5.0, timer_callback, widget);
     else
-        window->startButton->label("Solved!");
+        window->solveButton->label("Solved!");
 }
 
 void start_callback(Fl_Widget *widget, void *) {
-    StartButton *button = (StartButton *)widget;
+    SolveButton *button = (SolveButton *)widget;
     if (button->isCalled()) return;
     button->Call();
     Fl::add_timeout(1.0 / 5.0, timer_callback, button->window());
