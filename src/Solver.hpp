@@ -71,6 +71,10 @@ class Solver {
         size_t idx = 0;
         while (idx != BFS_Q.size()) {
             if (BFS_Q[idx].board.solved()) {
+                BitBoard newBoard(BFS_Q[idx].board);
+                newBoard[0][2] <<= 5 - BFS_Q[idx].board.last_bit(0, 2);
+                BFS_Q.emplace_back(Node(newBoard, BFS_Q[idx].dis + 1, idx));
+                idx = BFS_Q.size() - 1;
                 do {
                     solution.push_back(BFS_Q[idx].board);
                     idx = BFS_Q[idx].last;
