@@ -1,5 +1,5 @@
-#ifndef DISPLAY_HPP
-#define DISPLAY_HPP
+#ifndef SOLVEGUI_HPP
+#define SOLVEGUI_HPP
 
 #include <FL/Fl.H>
 #include <FL/Fl_Window.H>
@@ -10,7 +10,7 @@
 #include <algorithm>
 #include <vector>
 #include "BitBoard.hpp"
-#include "Design.hpp"
+#include "DesignGUI.hpp"
 
 namespace RUSH {
 

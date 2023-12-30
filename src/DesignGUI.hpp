@@ -1,9 +1,10 @@
-#ifndef DESIGN_HPP
-#define DESIGN_HPP
+#ifndef DESIGNGUI_HPP
+#define DESIGNGUI_HPP
 
 #include <FL/Fl.H>
 #include <FL/Fl_Window.H>
 #include <FL/fl_draw.H>
+#include <utility>
 
 namespace RUSH {
 

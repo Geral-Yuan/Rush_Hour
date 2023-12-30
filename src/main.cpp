@@ -1,5 +1,5 @@
 #include "Solver.hpp"
-#include "Display.hpp"
+#include "SolveGUI.hpp"
 
 using namespace RUSH;
 
