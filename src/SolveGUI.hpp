@@ -19,20 +19,26 @@ void start_callback(Fl_Widget *widget, void *);
 void solve_callback(Fl_Widget *widget, void *);
 
 class RushBoard : public Fl_Widget {
-    const std::vector<BitBoard> *boards_ptr;
+    bool solvable;
+    const std::vector<BitBoard> *solution;
     size_t idx;
 
    public:
-    RushBoard(int X, int Y, int W, int H, const std::vector<BitBoard> *B = nullptr) : Fl_Widget(X, Y, W, H), boards_ptr(B) {
+    RushBoard(int X, int Y, int W, int H) : Fl_Widget(X, Y, W, H), solvable(false), solution(nullptr), idx(0) {
     }
 
-    void setSolution(const std::vector<BitBoard> &B) {
-        boards_ptr = &B;
-        idx = boards_ptr->size() - 1;
+    void setSolution(const std::pair<bool, std::vector<BitBoard>> &sol) {
+        solution = &sol.second;
+        solvable = sol.first;
+        if (solvable) idx=solution->size()-1;
     }
 
     size_t get_idx() const {
         return idx;
+    }
+
+    bool isSolvable() const {
+        return solvable;
     }
 
     void drawVehicle(int m, int k, int l, int len, int &color_idx) const {
@@ -56,22 +62,22 @@ class RushBoard : public Fl_Widget {
         int colorIDX = 0;
         for (int m = 0; m < 2; ++m)
             for (int k = 0; k < 6; ++k) {
-                int bitCnt = m == 0 ? (*boards_ptr)[idx].rowCnt[k] : (*boards_ptr)[idx].colCnt[k];
+                int bitCnt = m == 0 ? (*solution)[idx].rowCnt[k] : (*solution)[idx].colCnt[k];
                 switch (bitCnt) {
                     case 2:
                     case 3: {
-                        drawVehicle(m, k, (*boards_ptr)[idx].first_bit(m, k), bitCnt, colorIDX);
+                        drawVehicle(m, k, (*solution)[idx].first_bit(m, k), bitCnt, colorIDX);
                         break;
                     }
                     case 4: {
-                        drawVehicle(m, k, (*boards_ptr)[idx].first_bit(m, k), 2, colorIDX);
-                        drawVehicle(m, k, (*boards_ptr)[idx].last_bit(m, k) - 1, 2, colorIDX);
+                        drawVehicle(m, k, (*solution)[idx].first_bit(m, k), 2, colorIDX);
+                        drawVehicle(m, k, (*solution)[idx].last_bit(m, k) - 1, 2, colorIDX);
                         break;
                     }
                     case 5: {
-                        int leftLength = ((*boards_ptr)[idx][m][k] & (1 << 7)) ? 3 : 2;
-                        drawVehicle(m, k, (*boards_ptr)[idx].first_bit(m, k), leftLength, colorIDX);
-                        drawVehicle(m, k, (*boards_ptr)[idx].last_bit(m, k) + leftLength - 4, 5 - leftLength, colorIDX);
+                        int leftLength = ((*solution)[idx][m][k] & (1 << 7)) ? 3 : 2;
+                        drawVehicle(m, k, (*solution)[idx].first_bit(m, k), leftLength, colorIDX);
+                        drawVehicle(m, k, (*solution)[idx].last_bit(m, k) + leftLength - 4, 5 - leftLength, colorIDX);
                         break;
                     }
                     default:
@@ -168,7 +174,7 @@ class RushWindow : public Fl_Window {
         stepLabel = new StepLabel(0, 0, W, H, "0 steps");
         stepLabel->hide();
         startButton->callback(start_callback, this);
-        solveButton->callback(solve_callback);
+        solveButton->callback(solve_callback, this->rushBoard);
     }
 
     ~RushWindow() {
@@ -259,7 +265,7 @@ class RushWindow : public Fl_Window {
         designBoard->resize(canvas_X + side / 3, canvas_Y + side / 2, side, side);
         vehicleBoard->resize(canvas_X + side * 5 / 3, canvas_Y + side / 2, side, side);
         rushBoard->resize(canvas_X + side / 3, canvas_Y + side / 3, side * 4 / 3, side * 4 / 3);
-        solveButton->resize(canvas_X + canvas_W - side * 3 / 4, canvas_Y + side / 2, side / 2, side / 6);
+        solveButton->resize(canvas_X + canvas_W - side * 4 / 5, canvas_Y + side / 2, side * 3 / 5, side / 6);
         stepLabel->resize(canvas_X + canvas_W - side * 3 / 4, canvas_Y + side * 4 / 3, side / 2, side / 6);
     }
 };
@@ -286,12 +292,16 @@ void start_callback(Fl_Widget *widget, void *win) {
     window->stepLabel->show();
 }
 
-void solve_callback(Fl_Widget *widget, void *) {
+void solve_callback(Fl_Widget *widget, void *board) {
     SolveButton *button = (SolveButton *)widget;
+    RushBoard *rushBoard = (RushBoard *)board;
     if (button->isCalled()) return;
     button->Call();
-    Fl::add_timeout(1.0 / 5.0, timer_callback, button->window());
-    button->label("Solving...");
+    if (rushBoard->isSolvable()) {
+        Fl::add_timeout(1.0 / 5.0, timer_callback, button->window());
+        button->label("Solving...");
+    } else
+        button->label("Unsolvable");
 }
 
 }  // namespace RUSH

@@ -54,8 +54,8 @@ class Solver {
         } while (1);
     }
 
-    std::vector<BitBoard> &solve() {
-        static std::vector<BitBoard> solution;
+    std::pair<bool, std::vector<BitBoard>> &solve() {
+        static std::pair<bool, std::vector<BitBoard>> solution;
         BFS_Q.emplace_back(Node(initBoard, 0, 0));
         visitedNodes.insert(std::make_pair(initBoard.rowID(), initBoard.colID()));
         size_t idx = 0;
@@ -66,10 +66,11 @@ class Solver {
                 BFS_Q.emplace_back(Node(newBoard, BFS_Q[idx].dis + 1, idx));
                 idx = BFS_Q.size() - 1;
                 do {
-                    solution.push_back(BFS_Q[idx].board);
+                    solution.second.push_back(BFS_Q[idx].board);
                     idx = BFS_Q[idx].last;
                 } while (BFS_Q[idx].dis != 0);
-                solution.push_back(BFS_Q[idx].board);
+                solution.second.push_back(initBoard);
+                solution.first = true;
                 return solution;
             }
             for (int m = 0; m < 2; ++m)
@@ -125,6 +126,8 @@ class Solver {
                 }
             ++idx;
         }
+        solution.second.push_back(initBoard);
+        solution.first = false;
         return solution;
     }
 };
