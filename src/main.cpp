@@ -1,12 +1,9 @@
-#include "Solver.hpp"
 #include "SolveGUI.hpp"
 
 using namespace RUSH;
 
 int main() {
-    Solver s;
-    std::vector<BitBoard> solution(s.solve());
-    RushWindow window(1200, 800, "Rush Hour", solution);
+    RushWindow window(1200, 800, "Rush Hour");
     window.end();
     window.show();
     return Fl::run();

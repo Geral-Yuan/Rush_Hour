@@ -3,7 +3,7 @@
 
 #include <vector>
 #include <unordered_set>
-#include "rush_utility.hpp"
+#include "BitBoard.hpp"
 
 namespace RUSH {
 
@@ -14,20 +14,10 @@ class Solver {
     std::unordered_set<idPair, myHash> visitedNodes;
 
    public:
-    Solver() {
-        Grid grid;
-        grid.getInput();
-        Grid2Board(grid, initBoard);
-    }
+    Solver() = default;
 
-    void Print(BitBoard &board) {
-        Grid grid;
-        Board2Grid(board, grid);
-        grid.print();
-    }
-
-    void Print_initBoard() {
-        Print(initBoard);
+    void setBoard(const BitBoard &board) {
+        initBoard = board;
     }
 
     void MoveLeft(int m, int k, int l, size_t idx, unsigned char mask) {
@@ -79,8 +69,7 @@ class Solver {
                     solution.push_back(BFS_Q[idx].board);
                     idx = BFS_Q[idx].last;
                 } while (BFS_Q[idx].dis != 0);
-                // PrintProcess(BFS_Q[idx]);
-                // std::cout<<"Puzzle solved in "<<BFS_Q[idx].dis+1<<" steps!"<<std::endl;
+                solution.push_back(BFS_Q[idx].board);
                 return solution;
             }
             for (int m = 0; m < 2; ++m)
@@ -137,19 +126,6 @@ class Solver {
             ++idx;
         }
         return solution;
-    }
-
-    void PrintProcess(Node &node) {
-        if (node.dis == 0) {
-            putchar('\n');
-            Print(node.board);
-            putchar('\n');
-        } else {
-            PrintProcess(BFS_Q[node.last]);
-            putchar('\n');
-            Print(node.board);
-            putchar('\n');
-        }
     }
 };
 

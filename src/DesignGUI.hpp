@@ -26,7 +26,15 @@ Fl_Color vehicle_colors[] = {
     fl_rgb_color(153, 153, 255),
     fl_rgb_color(255, 204, 153)};
 
-size_t occupied[6][6] = {};
+size_t mapped_idx[16] = {};
+
+size_t IDs[6][6] = {};
+
+bool isLegal(int i, int j) { return i >= 0 && i < 6 && j >= 0 && j < 6; }
+
+bool isHorizontal(int i, int j) {
+    return (isLegal(i, j - 1) && IDs[i][j - 1] == IDs[i][j]) || (isLegal(i, j + 1) && IDs[i][j + 1] == IDs[i][j]);
+}
 
 class Vehicle : public Fl_Widget {
     bool horizontal;
@@ -97,14 +105,20 @@ class Vehicle : public Fl_Widget {
         size_t id = color_idx == 0 ? 16 : color_idx;
         for (int i = 0; i < 6; ++i)
             for (int j = 0; j < 6; ++j)
-                if ((occupied[i][j] == 0 || occupied[i][j] == id) && inSideVehicle(board_X + j * cellSize + cellSize / 2, board_Y + i * cellSize + cellSize / 2)) {
-                    ++coverCnt;
-                    occupied[i][j] = id;
-                    if (firstCover) {
-                        localPos = std::make_pair(i, j);
-                        firstCover = false;
+                if (inSideVehicle(board_X + j * cellSize + cellSize / 2, board_Y + i * cellSize + cellSize / 2)) {
+                    if ((IDs[i][j] == 0 || IDs[i][j] == id)) {
+                        if (id == 16 && i != 2) break;
+                        ++coverCnt;
+                        IDs[i][j] = id;
+                        if (firstCover) {
+                            localPos = std::make_pair(i, j);
+                            firstCover = false;
+                        }
                     }
+                } else if (IDs[i][j] == id) {
+                    IDs[i][j] = 0;
                 }
+
         if ((isCar && coverCnt == 2) || (!isCar && coverCnt == 3)) {
             cover = true;
             pos = localPos;
@@ -113,8 +127,8 @@ class Vehicle : public Fl_Widget {
             settle = false;
             for (int i = 0; i < 16; ++i)
                 for (int j = 0; j < 6; ++j)
-                    if (occupied[i][j] == id)
-                        occupied[i][j] = 0;
+                    if (IDs[i][j] == id)
+                        IDs[i][j] = 0;
         }
     }
 
@@ -199,7 +213,7 @@ class DesignBoard : public Fl_Widget {
         int cellSize = 0.8 * size, gap = (size - cellSize) / 2;
         for (int i = 0; i < 6; ++i)
             for (int j = 0; j < 6; ++j) {
-                if (occupied[i][j])
+                if (IDs[i][j])
                     fl_color(FL_WHITE);
                 else
                     fl_color(fl_rgb_color(224, 224, 224));

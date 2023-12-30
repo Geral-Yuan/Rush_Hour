@@ -45,6 +45,14 @@ class BitBoard {
         if (idx == 0) return (unsigned char *)rowBits;
         return (unsigned char *)colBits;
     }
+    const unsigned char *operator[](int idx) const {
+        if (idx < 0 || idx > 1) {
+            std::cerr << "Invalid index access" << std::endl;
+            exit(1);
+        }
+        if (idx == 0) return (unsigned char *)rowBits;
+        return (unsigned char *)colBits;
+    }
     bool operator==(const BitBoard &rhs) const {
         for (int i = 0; i < 6; ++i)
             if (rowBits[i] ^ rhs.rowBits[i])

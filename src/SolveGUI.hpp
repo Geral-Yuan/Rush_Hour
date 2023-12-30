@@ -9,7 +9,7 @@
 #include <FL/fl_draw.H>
 #include <algorithm>
 #include <vector>
-#include "BitBoard.hpp"
+#include "Solver.hpp"
 #include "DesignGUI.hpp"
 
 namespace RUSH {
@@ -19,26 +19,30 @@ void start_callback(Fl_Widget *widget, void *);
 void solve_callback(Fl_Widget *widget, void *);
 
 class RushBoard : public Fl_Widget {
-    std::vector<BitBoard> boards;
+    const std::vector<BitBoard> *boards_ptr;
     size_t idx;
 
    public:
-    RushBoard(int X, int Y, int W, int H, const std::vector<BitBoard> &B = std::vector<BitBoard>()) : Fl_Widget(X, Y, W, H), boards(B) {
-        idx = boards.size() - 1;
+    RushBoard(int X, int Y, int W, int H, const std::vector<BitBoard> *B = nullptr) : Fl_Widget(X, Y, W, H), boards_ptr(B) {
+    }
+
+    void setSolution(const std::vector<BitBoard> &B) {
+        boards_ptr = &B;
+        idx = boards_ptr->size() - 1;
     }
 
     size_t get_idx() const {
         return idx;
     }
 
-    void drawVehicle(int m, int k, int l, int len, int idx) const {
+    void drawVehicle(int m, int k, int l, int len, int &color_idx) const {
         int X = x(), Y = y(), size = w() / 6;
         int width = 0.8 * size;
         int x = l * size + (size - width) / 2;
         int y = k * size + (size - width) / 2;
         int w = size * len - (size - width);
         int h = width;
-        fl_color(vehicle_colors[idx]);
+        fl_color(vehicle_colors[mapped_idx[color_idx++] % 16]);
         if (m == 0)
             fl_rectf(X + x, Y + y, w, h);
         else
@@ -52,30 +56,28 @@ class RushBoard : public Fl_Widget {
         int colorIDX = 0;
         for (int m = 0; m < 2; ++m)
             for (int k = 0; k < 6; ++k) {
-                if (m == 0 && k == 2) continue;
-                int bitCnt = m == 0 ? boards[idx].rowCnt[k] : boards[idx].colCnt[k];
+                int bitCnt = m == 0 ? (*boards_ptr)[idx].rowCnt[k] : (*boards_ptr)[idx].colCnt[k];
                 switch (bitCnt) {
                     case 2:
                     case 3: {
-                        drawVehicle(m, k, boards[idx].first_bit(m, k), bitCnt, ++colorIDX);
+                        drawVehicle(m, k, (*boards_ptr)[idx].first_bit(m, k), bitCnt, colorIDX);
                         break;
                     }
                     case 4: {
-                        drawVehicle(m, k, boards[idx].first_bit(m, k), 2, ++colorIDX);
-                        drawVehicle(m, k, boards[idx].last_bit(m, k) - 1, 2, ++colorIDX);
+                        drawVehicle(m, k, (*boards_ptr)[idx].first_bit(m, k), 2, colorIDX);
+                        drawVehicle(m, k, (*boards_ptr)[idx].last_bit(m, k) - 1, 2, colorIDX);
                         break;
                     }
                     case 5: {
-                        int leftLength = (boards[idx][m][k] & (1 << 7)) ? 3 : 2;
-                        drawVehicle(m, k, boards[idx].first_bit(m, k), leftLength, ++colorIDX);
-                        drawVehicle(m, k, boards[idx].last_bit(m, k) + leftLength - 4, 5 - leftLength, ++colorIDX);
+                        int leftLength = ((*boards_ptr)[idx][m][k] & (1 << 7)) ? 3 : 2;
+                        drawVehicle(m, k, (*boards_ptr)[idx].first_bit(m, k), leftLength, colorIDX);
+                        drawVehicle(m, k, (*boards_ptr)[idx].last_bit(m, k) + leftLength - 4, 5 - leftLength, colorIDX);
                         break;
                     }
                     default:
                         break;
                 }
             }
-        drawVehicle(0, 2, boards[idx].first_bit(0, 2), 2, 0);
     }
 
     void update() {
@@ -141,6 +143,7 @@ class StepLabel : public Fl_Box {
 
 class RushWindow : public Fl_Window {
    public:
+    Solver *solver;
     Fl_PNG_Image *backgroundImage;
     Fl_Box *background;
     StartButton *startButton;
@@ -150,14 +153,15 @@ class RushWindow : public Fl_Window {
     SolveButton *solveButton;
     StepLabel *stepLabel;
 
-    RushWindow(int W, int H, const char *L = 0, const std::vector<BitBoard> &B = std::vector<BitBoard>()) : Fl_Window(W, H, L) {
+    RushWindow(int W, int H, const char *L = 0) : Fl_Window(W, H, L) {
+        solver = new Solver;
         backgroundImage = new Fl_PNG_Image("./assets/Background.png");
         background = new Fl_Box(0, 0, W, H);
         background->image(backgroundImage->copy(W, H));
         startButton = new StartButton(0, 0, W, H, "Start");
         designBoard = new DesignBoard(0, 0, W, H);
         vehicleBoard = new VehicleBoard(0, 0, W, H);
-        rushBoard = new RushBoard(0, 0, W, H, B);
+        rushBoard = new RushBoard(0, 0, W, H);
         rushBoard->hide();
         solveButton = new SolveButton(0, 0, W, H, "Solve");
         solveButton->hide();
@@ -168,6 +172,7 @@ class RushWindow : public Fl_Window {
     }
 
     ~RushWindow() {
+        delete solver;
         delete backgroundImage;
         delete background->image();
         delete background;
@@ -177,6 +182,62 @@ class RushWindow : public Fl_Window {
         delete rushBoard;
         delete solveButton;
         delete stepLabel;
+    }
+
+    void initSolver() {
+        BitBoard board;
+        size_t last_id = 0;
+        int num = 0;
+        for (int i = 0; i < 6; ++i)
+            for (int j = 0; j < 6; ++j)
+                if (IDs[i][j])
+                    if (isHorizontal(i, j)) {
+                        board[0][i] |= 1 << j;
+                        ++board.rowCnt[i];
+                        if (IDs[i][j] != last_id)
+                            last_id = mapped_idx[num++] = IDs[i][j];
+                    }
+
+        for (int j = 0; j < 6; ++j)
+            for (int i = 0; i < 6; ++i)
+                if (IDs[i][j])
+                    if (!isHorizontal(i, j)) {
+                        board[1][j] |= 1 << i;
+                        ++board.colCnt[j];
+                        if (IDs[i][j] != last_id)
+                            last_id = mapped_idx[num++] = IDs[i][j];
+                    }
+
+        for (int i = 0; i < 6; ++i)
+            if (board.rowCnt[i] == 6 || board.colCnt[i] == 6) {
+                std::cerr << "Invalid board with a stuck row or column" << std::endl;
+                exit(1);
+            }
+
+        if (board.rowCnt[2] != 2) {
+            std::cerr << "Invalid board as not exactly a car in exit row" << std::endl;
+            exit(1);
+        }
+
+        for (int i = 0; i < 6; ++i)
+            if (board.rowCnt[i] == 5) {
+                for (int j = 0; j < 6; ++j) {
+                    if (IDs[i][j] == 0 || IDs[i][j] != IDs[i][j + 1]) continue;
+                    if (IDs[i][j + 2] == IDs[i][j])
+                        board[0][i] |= 1 << 7;
+                    break;
+                }
+            }
+        for (int j = 0; j < 6; ++j)
+            if (board.colCnt[j] == 5) {
+                for (int i = 0; i < 6; ++i) {
+                    if (IDs[i][j] == 0 || IDs[i][j] != IDs[i + 1][j]) continue;
+                    if (IDs[i + 2][j] == IDs[i][j])
+                        board[1][j] |= 1 << 7;
+                    break;
+                }
+            }
+        solver->setBoard(board);
     }
 
     void update() {
@@ -215,6 +276,8 @@ void timer_callback(void *widget) {
 void start_callback(Fl_Widget *widget, void *win) {
     StartButton *button = (StartButton *)widget;
     RushWindow *window = (RushWindow *)win;
+    window->initSolver();
+    window->rushBoard->setSolution(window->solver->solve());
     window->designBoard->hide();
     window->vehicleBoard->hide();
     button->hide();
