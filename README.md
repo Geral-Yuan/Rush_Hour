@@ -4,8 +4,4 @@ It is a solver of a sliding block puzzle [Rush Hour](https://en.wikipedia.org/wi
 
 ## To do:
 
-rowCnt & colCnt is unnecessary to store in every bitBoard but just in the whole Solver as they never change
-
-add a label to show the step taken
-
-add a feature that the user can move the bars in the board to try to solve the puzzle
+add the predesigned puzzles for users to select
