@@ -111,6 +111,8 @@ class Vehicle : public Fl_Widget {
                         ++coverCnt;
                         IDs[i][j] = id;
                         if (firstCover) {
+                            if (id == 16 && i == 2 && j == 4) break;
+                            if (id != 16 && horizontal && i == 2) break;
                             localPos = std::make_pair(i, j);
                             firstCover = false;
                         }
@@ -287,6 +289,19 @@ class VehicleBoard : public Fl_Widget {
         for (int i = 0; i < 16; ++i)
             vehicles[i]->hide();
     }
+};
+
+class RuleLabel : public Fl_Box {
+   public:
+    RuleLabel(int X, int Y, int W, int H, const char *L = 0) : Fl_Box(X, Y, W, H, L) {}
+
+    void draw() override {
+        int startX = x(), startY = y();
+        int width = w(), height = h();
+        fl_color(FL_BLACK);
+        fl_font(FL_HELVETICA_BOLD, height / 10);
+        fl_draw(label(), startX, startY, width, height, FL_ALIGN_CENTER);
+    };
 };
 
 }  // namespace RUSH

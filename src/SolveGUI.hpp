@@ -30,7 +30,7 @@ class RushBoard : public Fl_Widget {
     void setSolution(const std::pair<bool, std::vector<BitBoard>> &sol) {
         solution = &sol.second;
         solvable = sol.first;
-        if (solvable) idx=solution->size()-1;
+        if (solvable) idx = solution->size() - 1;
     }
 
     size_t get_idx() const {
@@ -155,6 +155,7 @@ class RushWindow : public Fl_Window {
     StartButton *startButton;
     DesignBoard *designBoard;
     VehicleBoard *vehicleBoard;
+    RuleLabel *ruleLabel;
     RushBoard *rushBoard;
     SolveButton *solveButton;
     StepLabel *stepLabel;
@@ -167,6 +168,7 @@ class RushWindow : public Fl_Window {
         startButton = new StartButton(0, 0, W, H, "Start");
         designBoard = new DesignBoard(0, 0, W, H);
         vehicleBoard = new VehicleBoard(0, 0, W, H);
+        ruleLabel = new RuleLabel(0, 0, W, H, "Design the puzzle by yourself. You can drag cars and trucks onto the board by mouse\nand rotate them by pushing any key on the keyboard. The goal is to move the red car to the exit,\nso only the red can be put on the exit lane except at the exit. Click \"Start\" to confirm your design.");
         rushBoard = new RushBoard(0, 0, W, H);
         rushBoard->hide();
         solveButton = new SolveButton(0, 0, W, H, "Solve");
@@ -185,6 +187,7 @@ class RushWindow : public Fl_Window {
         delete startButton;
         delete designBoard;
         delete vehicleBoard;
+        delete ruleLabel;
         delete rushBoard;
         delete solveButton;
         delete stepLabel;
@@ -213,17 +216,6 @@ class RushWindow : public Fl_Window {
                         if (IDs[i][j] != last_id)
                             last_id = mapped_idx[num++] = IDs[i][j];
                     }
-
-        for (int i = 0; i < 6; ++i)
-            if (board.rowCnt[i] == 6 || board.colCnt[i] == 6) {
-                std::cerr << "Invalid board with a stuck row or column" << std::endl;
-                exit(1);
-            }
-
-        if (board.rowCnt[2] != 2) {
-            std::cerr << "Invalid board as not exactly a car in exit row" << std::endl;
-            exit(1);
-        }
 
         for (int i = 0; i < 6; ++i)
             if (board.rowCnt[i] == 5) {
@@ -264,6 +256,7 @@ class RushWindow : public Fl_Window {
         startButton->resize(canvas_X + side * 5 / 4, canvas_Y + side * 5 / 3, side / 2, side / 6);
         designBoard->resize(canvas_X + side / 3, canvas_Y + side / 2, side, side);
         vehicleBoard->resize(canvas_X + side * 5 / 3, canvas_Y + side / 2, side, side);
+        ruleLabel->resize(canvas_X, canvas_Y, canvas_W, side / 2);
         rushBoard->resize(canvas_X + side / 3, canvas_Y + side / 3, side * 4 / 3, side * 4 / 3);
         solveButton->resize(canvas_X + canvas_W - side * 4 / 5, canvas_Y + side / 2, side * 3 / 5, side / 6);
         stepLabel->resize(canvas_X + canvas_W - side * 3 / 4, canvas_Y + side * 4 / 3, side / 2, side / 6);
@@ -286,6 +279,7 @@ void start_callback(Fl_Widget *widget, void *win) {
     window->rushBoard->setSolution(window->solver->solve());
     window->designBoard->hide();
     window->vehicleBoard->hide();
+    window->ruleLabel->hide();
     button->hide();
     window->rushBoard->show();
     window->solveButton->show();
