@@ -98,6 +98,55 @@ class Vehicle : public Fl_Widget {
         this->size(h(), w());
     }
 
+    void checkFullRow(int &coverCnt) {
+        for (int i = 0; i < 6; ++i) {
+            if (i == 2) continue;
+            int carCnt = 0, truckCnt = 0;
+            for (int j = 0; j < 6; j += 2)
+                if (IDs[i][j] > 0 && IDs[i][j] == IDs[i][j + 1])
+                    ++carCnt;
+                else
+                    break;
+            if (carCnt == 3) {
+                coverCnt = 0;
+                break;
+            }
+            for (int j = 0; j < 6; j += 3)
+                if (IDs[i][j] > 0 && IDs[i][j] == IDs[i][j + 1] && IDs[i][j] == IDs[i][j + 2])
+                    ++truckCnt;
+                else
+                    break;
+            if (truckCnt == 2) {
+                coverCnt = 0;
+                break;
+            }
+        }
+    }
+
+    void checkFullCol(int &coverCnt) {
+        for (int j = 0; j < 6; ++j) {
+            int carCnt = 0, truckCnt = 0;
+            for (int i = 0; i < 6; i += 2)
+                if (IDs[i][j] > 0 && IDs[i][j] == IDs[i + 1][j])
+                    ++carCnt;
+                else
+                    break;
+            if (carCnt == 3) {
+                coverCnt = 0;
+                break;
+            }
+            for (int i = 0; i < 6; i += 3)
+                if (IDs[i][j] > 0 && IDs[i][j] == IDs[i + 1][j] && IDs[i][j] == IDs[i + 2][j])
+                    ++truckCnt;
+                else
+                    break;
+            if (truckCnt == 2) {
+                coverCnt = 0;
+                break;
+            }
+        }
+    }
+
     void check() {
         int coverCnt = 0;
         bool firstCover = true;
@@ -120,6 +169,8 @@ class Vehicle : public Fl_Widget {
                 } else if (IDs[i][j] == id) {
                     IDs[i][j] = 0;
                 }
+        checkFullRow(coverCnt);
+        checkFullCol(coverCnt);
 
         if ((isCar && coverCnt == 2) || (!isCar && coverCnt == 3)) {
             cover = true;
