@@ -91,42 +91,6 @@ class RushBoard : public Fl_Widget {
     }
 };
 
-class SolveButton : public Fl_Button {
-    bool called;
-
-   public:
-    SolveButton(int X, int Y, int W, int H, const char *L) : Fl_Button(X, Y, W, H, L), called(false) {}
-    void Call() {
-        called = true;
-    }
-    bool isCalled() const {
-        return called;
-    }
-    void draw() override {
-        int startX = x(), startY = y();
-        int width = w(), height = h();
-        fl_color(FL_WHITE);
-        fl_rectf(startX, startY, width, height);
-        fl_color(FL_BLACK);
-        fl_font(FL_HELVETICA_BOLD, width / 6);
-        fl_draw(label(), startX, startY, width, height, FL_ALIGN_CENTER);
-    }
-};
-
-class StartButton : public Fl_Button {
-   public:
-    StartButton(int X, int Y, int W, int H, const char *L = 0) : Fl_Button(X, Y, W, H, L) {}
-    void draw() override {
-        int startX = x(), startY = y();
-        int width = w(), height = h();
-        fl_color(FL_WHITE);
-        fl_rectf(startX, startY, width, height);
-        fl_color(FL_BLACK);
-        fl_font(FL_HELVETICA_BOLD, width / 6);
-        fl_draw(label(), startX, startY, width, height, FL_ALIGN_CENTER);
-    }
-};
-
 class StepLabel : public Fl_Box {
     size_t step;
 
@@ -152,31 +116,34 @@ class RushWindow : public Fl_Window {
     Solver *solver;
     Fl_PNG_Image *backgroundImage;
     Fl_Box *background;
-    StartButton *startButton;
+    Fl_Button *startButton;
     DesignBoard *designBoard;
     VehicleBoard *vehicleBoard;
     RuleLabel *ruleLabel;
     RushBoard *rushBoard;
-    SolveButton *solveButton;
+    Fl_Button *solveButton;
     StepLabel *stepLabel;
+    bool solving;
 
-    RushWindow(int W, int H, const char *L = 0) : Fl_Window(W, H, L) {
+    RushWindow(int W, int H, const char *L = 0) : Fl_Window(W, H, L), solving(false) {
         solver = new Solver;
         backgroundImage = new Fl_PNG_Image("./assets/Background.png");
         background = new Fl_Box(0, 0, W, H);
         background->image(backgroundImage->copy(W, H));
-        startButton = new StartButton(0, 0, W, H, "Start");
+        startButton = new Fl_Button(0, 0, W, H, "Start");
+        startButton->labelfont(FL_HELVETICA_BOLD);
         designBoard = new DesignBoard(0, 0, W, H);
         vehicleBoard = new VehicleBoard(0, 0, W, H);
         ruleLabel = new RuleLabel(0, 0, W, H, "Design the puzzle by yourself. You can drag cars and trucks onto the board by mouse\nand rotate them by pushing any key on the keyboard. The goal is to move the red car to the exit,\nso only the red can be put on the exit lane except at the exit. Click \"Start\" to confirm your design.");
         rushBoard = new RushBoard(0, 0, W, H);
         rushBoard->hide();
-        solveButton = new SolveButton(0, 0, W, H, "Solve");
+        solveButton = new Fl_Button(0, 0, W, H, "Solve");
+        solveButton->labelfont(FL_HELVETICA_BOLD);
         solveButton->hide();
         stepLabel = new StepLabel(0, 0, W, H, "0 steps");
         stepLabel->hide();
         startButton->callback(start_callback, this);
-        solveButton->callback(solve_callback, this->rushBoard);
+        solveButton->callback(solve_callback, this);
     }
 
     ~RushWindow() {
@@ -254,11 +221,13 @@ class RushWindow : public Fl_Window {
         background->resize(canvas_X, canvas_Y, canvas_W, canvas_H);
         background->image(backgroundImage->copy(canvas_W, canvas_H));
         startButton->resize(canvas_X + side * 5 / 4, canvas_Y + side * 5 / 3, side / 2, side / 6);
+        startButton->labelsize(side / 12);
         designBoard->resize(canvas_X + side / 3, canvas_Y + side / 2, side, side);
         vehicleBoard->resize(canvas_X + side * 5 / 3, canvas_Y + side / 2, side, side);
         ruleLabel->resize(canvas_X, canvas_Y, canvas_W, side / 2);
         rushBoard->resize(canvas_X + side / 3, canvas_Y + side / 3, side * 4 / 3, side * 4 / 3);
         solveButton->resize(canvas_X + canvas_W - side * 4 / 5, canvas_Y + side / 2, side * 3 / 5, side / 6);
+        solveButton->labelsize(side / 12);
         stepLabel->resize(canvas_X + canvas_W - side * 3 / 4, canvas_Y + side * 4 / 3, side / 2, side / 6);
     }
 };
@@ -273,7 +242,7 @@ void timer_callback(void *widget) {
 }
 
 void start_callback(Fl_Widget *widget, void *win) {
-    StartButton *button = (StartButton *)widget;
+    Fl_Button *button = (Fl_Button *)widget;
     RushWindow *window = (RushWindow *)win;
     window->initSolver();
     window->rushBoard->setSolution(window->solver->solve());
@@ -286,12 +255,12 @@ void start_callback(Fl_Widget *widget, void *win) {
     window->stepLabel->show();
 }
 
-void solve_callback(Fl_Widget *widget, void *board) {
-    SolveButton *button = (SolveButton *)widget;
-    RushBoard *rushBoard = (RushBoard *)board;
-    if (button->isCalled()) return;
-    button->Call();
-    if (rushBoard->isSolvable()) {
+void solve_callback(Fl_Widget *widget, void *win) {
+    Fl_Button *button = (Fl_Button *)widget;
+    RushWindow *window = (RushWindow *)win;
+    if (window->solving) return;
+    window->solving = true;
+    if (window->rushBoard->isSolvable()) {
         Fl::add_timeout(1.0 / 5.0, timer_callback, button->window());
         button->label("Solving...");
     } else
