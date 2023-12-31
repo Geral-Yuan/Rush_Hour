@@ -19,6 +19,8 @@ void load_callback(Fl_Widget *, void *);
 void lastLevel_callback(Fl_Widget *, void *);
 void nextLevel_callback(Fl_Widget *, void *);
 void solve_callback(Fl_Widget *, void *);
+void lastStep_callback(Fl_Widget *, void *);
+void nextStep_callback(Fl_Widget *, void *);
 void design_callback(Fl_Widget *, void *);
 
 #ifdef LEVEL_DESIGN
@@ -33,7 +35,7 @@ class RushBoard : public Fl_Widget {
    public:
     RushBoard(int X, int Y, int W, int H) : Fl_Widget(X, Y, W, H), solvable(false), solution(nullptr), idx(0) {}
 
-    ~RushBoard(){
+    ~RushBoard() {
         if (solution)
             delete solution;
     }
@@ -106,8 +108,19 @@ class RushBoard : public Fl_Widget {
             }
     }
 
-    void update() {
-        if (idx) --idx;
+    bool nextStep() {
+        if (idx) {
+            --idx;
+            return true;
+        }
+        return false;
+    }
+    bool lastStep() {
+        if (idx < solution->size() - 1) {
+            ++idx;
+            return true;
+        }
+        return false;
     }
 };
 
@@ -125,7 +138,8 @@ class StepLabel : public Fl_Box {
         label((std::to_string(step) + " steps").c_str());
         fl_draw(label(), startX, startY, width, height, FL_ALIGN_CENTER);
     };
-    void update() { ++step; }
+    void nextStep() { ++step; }
+    void lastStep() { --step; }
     void reset() { step = 0; }
 };
 
@@ -145,6 +159,8 @@ class RushWindow : public Fl_Window {
     RushBoard *rushBoard;
     Fl_Button *solveButton;
     StepLabel *stepLabel;
+    Fl_Button *lastStep;
+    Fl_Button *nextStep;
     Fl_Button *back2Design;
     bool solving;
 #ifdef LEVEL_DESIGN
@@ -175,6 +191,12 @@ class RushWindow : public Fl_Window {
         solveButton->hide();
         stepLabel = new StepLabel(0, 0, W, H, "0 steps");
         stepLabel->hide();
+        lastStep = new Fl_Button(0, 0, W, H, "last step");
+        lastStep->labelfont(FL_HELVETICA_BOLD);
+        lastStep->hide();
+        nextStep = new Fl_Button(0, 0, W, H, "next step");
+        nextStep->labelfont(FL_HELVETICA_BOLD);
+        nextStep->hide();
         back2Design = new Fl_Button(0, 0, W, H, "Desgin");
         back2Design->labelfont(FL_HELVETICA_BOLD);
         back2Design->hide();
@@ -183,6 +205,8 @@ class RushWindow : public Fl_Window {
         nextLevel->callback(nextLevel_callback, this);
         loadButton->callback(load_callback, this);
         solveButton->callback(solve_callback, this);
+        lastStep->callback(lastStep_callback, this);
+        nextStep->callback(nextStep_callback, this);
         back2Design->callback(design_callback, this);
 #ifdef LEVEL_DESIGN
         printDesign = new Fl_Button(0, 0, W, H, "Print");
@@ -207,6 +231,8 @@ class RushWindow : public Fl_Window {
         delete rushBoard;
         delete solveButton;
         delete stepLabel;
+        delete lastStep;
+        delete nextStep;
         delete back2Design;
 #ifdef LEVEL_DESIGN
         delete printDesign;
@@ -259,9 +285,15 @@ class RushWindow : public Fl_Window {
         solver->setBoard(board);
     }
 
-    void update() {
-        rushBoard->update();
-        stepLabel->update();
+    void StepForward() {
+        if (rushBoard->nextStep())
+            stepLabel->nextStep();
+        this->redraw();
+    }
+
+    void StepBackward() {
+        if (rushBoard->lastStep())
+            stepLabel->lastStep();
         this->redraw();
     }
 
@@ -290,6 +322,10 @@ class RushWindow : public Fl_Window {
         solveButton->resize(canvas_X + canvas_W - side * 4 / 5, canvas_Y + side / 2, side * 3 / 5, side / 6);
         solveButton->labelsize(side / 12);
         stepLabel->resize(canvas_X + canvas_W - side * 3 / 4, canvas_Y + side * 4 / 3, side / 2, side / 6);
+        lastStep->resize(canvas_X + canvas_W - side * 4 / 5, canvas_Y + side * 5 / 6, side * 3 / 5, side / 6);
+        lastStep->labelsize(side / 12);
+        nextStep->resize(canvas_X + canvas_W - side * 4 / 5, canvas_Y + side, side * 3 / 5, side / 6);
+        nextStep->labelsize(side / 12);
         back2Design->resize(canvas_X + canvas_W - side * 4 / 5, canvas_Y + side * 5 / 3, side * 3 / 5, side / 6);
         back2Design->labelsize(side / 12);
 #ifdef LEVEL_DESIGN
@@ -310,7 +346,7 @@ class RushWindow : public Fl_Window {
 void timer_callback(void *widget) {
     RushWindow *window = (RushWindow *)widget;
     if (!window->solving) return;
-    window->update();
+    window->StepForward();
     if (window->rushBoard->get_idx() > 0)
         Fl::repeat_timeout(1.0 / 5.0, timer_callback, widget);
     else
@@ -332,6 +368,8 @@ void start_callback(Fl_Widget *, void *win) {
     window->rushBoard->show();
     window->solveButton->show();
     window->stepLabel->show();
+    window->lastStep->show();
+    window->nextStep->show();
     window->back2Design->show();
 #ifdef LEVEL_DESIGN
     window->printDesign->hide();
@@ -368,6 +406,26 @@ void solve_callback(Fl_Widget *, void *win) {
         window->solveButton->label("Unsolvable");
 }
 
+void lastStep_callback(Fl_Widget *, void *win) {
+    RushWindow *window = (RushWindow *)win;
+    if (!window->rushBoard->isSolvable()) return;
+    window->solveButton->label("Solve");
+    window->solving=false;
+    window->StepBackward();
+}
+
+void nextStep_callback(Fl_Widget *, void *win) {
+    RushWindow *window = (RushWindow *)win;
+    if (!window->rushBoard->isSolvable()) return;
+    window->solveButton->label("Solve");
+    window->solving=false;
+    window->StepForward();
+    if (window->rushBoard->get_idx()==0){
+        window->solveButton->label("Solved!");
+        window->solving=true;
+    }
+}
+
 void design_callback(Fl_Widget *, void *win) {
     RushWindow *window = (RushWindow *)win;
     window->reset();
@@ -382,6 +440,8 @@ void design_callback(Fl_Widget *, void *win) {
     window->rushBoard->hide();
     window->solveButton->hide();
     window->stepLabel->hide();
+    window->lastStep->hide();
+    window->nextStep->hide();
     window->back2Design->hide();
 }
 
