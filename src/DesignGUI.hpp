@@ -144,6 +144,10 @@ class Vehicle : public Fl_Widget {
         horizontal = true;
     }
     void setPos(int row, int col) { pos = std::make_pair(row, col); }
+    void reset() {
+        horizontal = true;
+        dragging = cover = settle = false;
+    }
 
     bool isHorizontal() const { return horizontal; }
     bool settled() const { return settle; }
@@ -408,6 +412,11 @@ class VehicleBoard : public Fl_Widget {
             vehicles[i]->cellSize = cellSize;
         }
     }
+    void show() override {
+        Fl_Widget::show();
+        for (int i = 0; i < 16; ++i)
+            vehicles[i]->show();
+    }
     void hide() override {
         Fl_Widget::hide();
         for (int i = 0; i < 16; ++i)
@@ -426,6 +435,11 @@ class VehicleBoard : public Fl_Widget {
                 vehicles[i]->Stay();
             }
         }
+    }
+    void reset() {
+        memset(IDs, 0, sizeof(IDs));
+        memset(mapped_idx, 0, sizeof(mapped_idx));
+        for (int i = 0; i < 16; ++i) vehicles[i]->reset();
     }
 
 #ifdef LEVEL_DESIGN

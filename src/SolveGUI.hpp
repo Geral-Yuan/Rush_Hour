@@ -19,6 +19,7 @@ void load_callback(Fl_Widget *, void *);
 void lastLevel_callback(Fl_Widget *, void *);
 void nextLevel_callback(Fl_Widget *, void *);
 void solve_callback(Fl_Widget *, void *);
+void design_callback(Fl_Widget *, void *);
 
 #ifdef LEVEL_DESIGN
 void printLevel_callback(Fl_Widget *, void *);
@@ -30,12 +31,25 @@ class RushBoard : public Fl_Widget {
     size_t idx;
 
    public:
-    RushBoard(int X, int Y, int W, int H) : Fl_Widget(X, Y, W, H), solvable(false), solution(nullptr), idx(0) {
+    RushBoard(int X, int Y, int W, int H) : Fl_Widget(X, Y, W, H), solvable(false), solution(nullptr), idx(0) {}
+
+    ~RushBoard(){
+        if (solution)
+            delete solution;
     }
 
-    void setSolution(const std::pair<bool, std::vector<BitBoard>> &sol) {
-        solution = &sol.second;
+    void reset() {
+        solvable = false;
+        if (solution) {
+            delete solution;
+            solution = nullptr;
+        }
+        idx = 0;
+    }
+
+    void setSolution(const std::pair<bool, std::vector<BitBoard> *> sol) {
         solvable = sol.first;
+        solution = sol.second;
         if (solvable) idx = solution->size() - 1;
     }
 
@@ -111,10 +125,8 @@ class StepLabel : public Fl_Box {
         label((std::to_string(step) + " steps").c_str());
         fl_draw(label(), startX, startY, width, height, FL_ALIGN_CENTER);
     };
-
-    void update() {
-        ++step;
-    }
+    void update() { ++step; }
+    void reset() { step = 0; }
 };
 
 class RushWindow : public Fl_Window {
@@ -133,6 +145,7 @@ class RushWindow : public Fl_Window {
     RushBoard *rushBoard;
     Fl_Button *solveButton;
     StepLabel *stepLabel;
+    Fl_Button *back2Design;
     bool solving;
 #ifdef LEVEL_DESIGN
     Fl_Button *printDesign;
@@ -162,11 +175,15 @@ class RushWindow : public Fl_Window {
         solveButton->hide();
         stepLabel = new StepLabel(0, 0, W, H, "0 steps");
         stepLabel->hide();
+        back2Design = new Fl_Button(0, 0, W, H, "Desgin");
+        back2Design->labelfont(FL_HELVETICA_BOLD);
+        back2Design->hide();
         startButton->callback(start_callback, this);
         lastLevel->callback(lastLevel_callback, this);
         nextLevel->callback(nextLevel_callback, this);
         loadButton->callback(load_callback, this);
         solveButton->callback(solve_callback, this);
+        back2Design->callback(design_callback, this);
 #ifdef LEVEL_DESIGN
         printDesign = new Fl_Button(0, 0, W, H, "Print");
         printDesign->labelfont(FL_HELVETICA_BOLD);
@@ -190,6 +207,7 @@ class RushWindow : public Fl_Window {
         delete rushBoard;
         delete solveButton;
         delete stepLabel;
+        delete back2Design;
 #ifdef LEVEL_DESIGN
         delete printDesign;
 #endif
@@ -272,15 +290,26 @@ class RushWindow : public Fl_Window {
         solveButton->resize(canvas_X + canvas_W - side * 4 / 5, canvas_Y + side / 2, side * 3 / 5, side / 6);
         solveButton->labelsize(side / 12);
         stepLabel->resize(canvas_X + canvas_W - side * 3 / 4, canvas_Y + side * 4 / 3, side / 2, side / 6);
+        back2Design->resize(canvas_X + canvas_W - side * 4 / 5, canvas_Y + side * 5 / 3, side * 3 / 5, side / 6);
+        back2Design->labelsize(side / 12);
 #ifdef LEVEL_DESIGN
         printDesign->resize(canvas_X + side, canvas_Y + side * 10 / 6, side * 2 / 9, side / 9);
         printDesign->labelsize(side / 20);
 #endif
     }
+
+    void reset() {
+        solving = false;
+        solveButton->label("Solve");
+        vehicleBoard->reset();
+        rushBoard->reset();
+        stepLabel->reset();
+    }
 };
 
 void timer_callback(void *widget) {
     RushWindow *window = (RushWindow *)widget;
+    if (!window->solving) return;
     window->update();
     if (window->rushBoard->get_idx() > 0)
         Fl::repeat_timeout(1.0 / 5.0, timer_callback, widget);
@@ -303,6 +332,7 @@ void start_callback(Fl_Widget *, void *win) {
     window->rushBoard->show();
     window->solveButton->show();
     window->stepLabel->show();
+    window->back2Design->show();
 #ifdef LEVEL_DESIGN
     window->printDesign->hide();
 #endif
@@ -336,6 +366,23 @@ void solve_callback(Fl_Widget *, void *win) {
         window->solveButton->label("Solving...");
     } else
         window->solveButton->label("Unsolvable");
+}
+
+void design_callback(Fl_Widget *, void *win) {
+    RushWindow *window = (RushWindow *)win;
+    window->reset();
+    window->designBoard->show();
+    window->vehicleBoard->show();
+    window->ruleLabel->show();
+    window->levelBoard->show();
+    window->loadButton->show();
+    window->lastLevel->show();
+    window->nextLevel->show();
+    window->startButton->show();
+    window->rushBoard->hide();
+    window->solveButton->hide();
+    window->stepLabel->hide();
+    window->back2Design->hide();
 }
 
 #ifdef LEVEL_DESIGN
