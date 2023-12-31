@@ -1,10 +1,13 @@
 #ifndef DESIGNGUI_HPP
 #define DESIGNGUI_HPP
 
+#define LEVEL_DESIGN
+
 #include <FL/Fl.H>
 #include <FL/Fl_Window.H>
 #include <FL/fl_draw.H>
 #include <utility>
+#include <algorithm>
 
 namespace RUSH {
 
@@ -29,6 +32,82 @@ Fl_Color vehicle_colors[] = {
 size_t mapped_idx[16] = {};
 
 size_t IDs[6][6] = {};
+
+const int LEVELS = 3;
+
+size_t preDefined_levels[LEVELS][6][6] = {
+    {{1, 1, 0, 14, 2, 8},
+     {0, 0, 0, 14, 2, 8},
+     {3, 16, 16, 14, 0, 13},
+     {3, 0, 12, 6, 6, 13},
+     {4, 4, 12, 0, 0, 13},
+     {5, 5, 12, 0, 0, 0}},
+    {{13, 3, 3, 0, 5, 15},
+     {13, 2, 1, 0, 5, 15},
+     {13, 2, 1, 16, 16, 15},
+     {14, 14, 14, 8, 0, 0},
+     {0, 0, 4, 8, 11, 11},
+     {6, 6, 4, 10, 10, 0}},
+    {{15, 1, 2, 2, 3, 0},
+     {15, 1, 4, 0, 3, 13},
+     {15, 0, 4, 16, 16, 13},
+     {14, 14, 14, 11, 0, 13},
+     {0, 0, 8, 11, 9, 9},
+     {6, 6, 8, 5, 5, 0}}};
+
+struct vehicleState {
+    bool settle;
+    bool horizontal;
+    int row, col;
+} v_states[LEVELS][16] = {
+    {{1, 1, 2, 1},
+     {1, 1, 0, 0},
+     {1, 0, 0, 4},
+     {1, 0, 2, 0},
+     {1, 1, 4, 0},
+     {1, 1, 5, 0},
+     {1, 1, 3, 3},
+     {0, 1, 0, 0},
+     {1, 0, 0, 5},
+     {0, 1, 0, 0},
+     {0, 1, 0, 0},
+     {0, 1, 0, 0},
+     {1, 0, 3, 2},
+     {1, 0, 2, 5},
+     {1, 0, 0, 3},
+     {0, 1, 0, 0}},
+    {{1, 1, 2, 3},
+     {1, 0, 1, 2},
+     {1, 0, 1, 1},
+     {1, 1, 0, 1},
+     {1, 0, 4, 2},
+     {1, 0, 0, 4},
+     {1, 1, 5, 0},
+     {0, 1, 0, 0},
+     {1, 0, 3, 3},
+     {0, 1, 0, 0},
+     {1, 1, 5, 3},
+     {1, 1, 4, 4},
+     {0, 1, 0, 0},
+     {1, 0, 0, 0},
+     {1, 1, 3, 0},
+     {1, 0, 0, 5}},
+    {{1, 1, 2, 3},
+     {1, 0, 0, 1},
+     {1, 1, 0, 2},
+     {1, 0, 0, 4},
+     {1, 0, 1, 2},
+     {1, 1, 5, 3},
+     {1, 1, 5, 0},
+     {0, 1, 0, 0},
+     {1, 0, 4, 2},
+     {1, 1, 4, 4},
+     {0, 1, 0, 0},
+     {1, 0, 3, 3},
+     {0, 1, 0, 0},
+     {1, 0, 1, 5},
+     {1, 1, 3, 0},
+     {1, 0, 0, 0}}};
 
 bool isLegal(int i, int j) { return i >= 0 && i < 6 && j >= 0 && j < 6; }
 
@@ -56,25 +135,21 @@ class Vehicle : public Fl_Widget {
         fl_rectf(drawX, drawY, w(), h());
     }
 
-    bool stay() const {
-        return !(dragging || settle);
+    void Settle(bool h) {
+        settle = cover = true;
+        horizontal = h;
     }
+    void Stay() {
+        settle = cover = false;
+        horizontal = true;
+    }
+    void setPos(int row, int col) { pos = std::make_pair(row, col); }
 
-    bool isHorizontal() const {
-        return horizontal;
-    }
-
-    bool settled() const {
-        return settle;
-    }
-
-    int posRow() const {
-        return pos.first;
-    }
-
-    int posCol() const {
-        return pos.second;
-    }
+    bool isHorizontal() const { return horizontal; }
+    bool settled() const { return settle; }
+    bool stay() const { return !(dragging || settle); }
+    int posRow() const { return pos.first; }
+    int posCol() const { return pos.second; }
 
     void resize(int X, int Y, int W, int H) {
         Fl_Widget::resize(X, Y, W, H);
@@ -84,9 +159,7 @@ class Vehicle : public Fl_Widget {
         }
     }
 
-    bool inSideVehicle(int x, int y) const {
-        return x >= drawX && x <= drawX + w() && y >= drawY && y <= drawY + h();
-    }
+    bool inSideVehicle(int x, int y) const { return x >= drawX && x <= drawX + w() && y >= drawY && y <= drawY + h(); }
 
     void changeDirection() {
         horizontal = !horizontal;
@@ -340,6 +413,52 @@ class VehicleBoard : public Fl_Widget {
         for (int i = 0; i < 16; ++i)
             vehicles[i]->hide();
     }
+    void set2level(int level) {
+        for (int i = 0; i < 6; ++i)
+            for (int j = 0; j < 6; ++j)
+                IDs[i][j] = preDefined_levels[level][i][j];
+        for (int i = 0; i < 16; ++i) {
+            vehicleState &vs = v_states[level][i];
+            if (vs.settle) {
+                vehicles[i]->Settle(vs.horizontal);
+                vehicles[i]->setPos(vs.row, vs.col);
+            } else {
+                vehicles[i]->Stay();
+            }
+        }
+    }
+
+#ifdef LEVEL_DESIGN
+    void printState() const {
+        std::cout << "IDs:\n";
+        for (int i = 0; i < 6; ++i) {
+            std::cout << "{";
+            for (int j = 0; j < 6; ++j) {
+                std::cout << IDs[i][j];
+                if (j < 5)
+                    std::cout << ",";
+                else if (i < 5)
+                    std::cout << "},\n";
+                else
+                    std::cout << "}\n";
+            }
+        }
+        std::cout << "Vehicles' States:\n";
+        for (int i = 0; i < 16; ++i) {
+            Vehicle *v = vehicles[i];
+            std::cout << "{" << v->settled() << "," << v->isHorizontal() << ",";
+            if (v->settled())
+                std::cout << v->posRow() << "," << v->posCol();
+            else
+                std::cout << "0,0";
+            std::cout << "}";
+            if (i < 15)
+                std::cout << ",\n";
+            else
+                std::cout << "\n";
+        }
+    }
+#endif
 };
 
 class RuleLabel : public Fl_Box {
@@ -353,6 +472,35 @@ class RuleLabel : public Fl_Box {
         fl_font(FL_HELVETICA_BOLD, height / 10);
         fl_draw(label(), startX, startY, width, height, FL_ALIGN_CENTER);
     };
+};
+
+class LevelBoard : public Fl_Widget {
+    int level;
+
+   public:
+    LevelBoard(int X, int Y, int W, int H) : Fl_Widget(X, Y, W, H), level(0) {}
+
+    int getLevel() const { return level; }
+    void lastLevel() { level = (level + LEVELS - 1) % LEVELS; }
+    void nextLevel() { level = (level + 1) % LEVELS; }
+
+    void draw() override {
+        int X = x(), Y = y();
+        int size = w() / 6;
+        int width = 0.8 * size, carLength = 1.8 * size, truckLength = 2.8 * size;
+        int gap = (size - width) / 2;
+        drawBoard(X, Y, size);
+        for (int i = 0; i < 16; ++i) {
+            vehicleState &vs = v_states[level][i];
+            int length = i < 12 ? carLength : truckLength;
+            if (vs.settle) {
+                int w = vs.horizontal ? length : width;
+                int h = vs.horizontal ? width : length;
+                fl_color(vehicle_colors[i]);
+                fl_rectf(X + size * vs.col + gap, Y + size * vs.row + gap, w, h);
+            }
+        }
+    }
 };
 
 }  // namespace RUSH
