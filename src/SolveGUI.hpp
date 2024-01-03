@@ -127,6 +127,7 @@ class RushBoard : public Fl_Widget {
 
 class StepLabel : public Fl_Box {
     size_t step;
+    std::string labelContent;
 
    public:
     StepLabel(int X, int Y, int W, int H, const char *L = 0, size_t _step = 0) : Fl_Box(X, Y, W, H, L), step(_step) {}
@@ -136,7 +137,8 @@ class StepLabel : public Fl_Box {
         int width = w(), height = h();
         fl_color(FL_BLACK);
         fl_font(FL_HELVETICA_BOLD, width / 6);
-        label((std::to_string(step) + " steps").c_str());
+        labelContent=std::to_string(step) + " steps";
+        label(labelContent.c_str());
         fl_draw(label(), startX, startY, width, height, FL_ALIGN_CENTER);
     };
     void nextStep() { ++step; }
