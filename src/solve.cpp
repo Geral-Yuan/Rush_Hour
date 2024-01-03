@@ -120,6 +120,7 @@ void printLevel_callback(Fl_Widget *, void *win) {
     RushWindow *window = (RushWindow *)win;
     window->vehicleBoard->printState();
 }
+#endif
 
 void RushBoard::reset() {
     solvable = false;
@@ -385,7 +386,5 @@ void RushWindow::reset() {
     rushBoard->reset();
     stepLabel->reset();
 }
-
-#endif
 
 };  // namespace RUSH
