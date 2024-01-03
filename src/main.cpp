@@ -1,4 +1,4 @@
-#include "SolveGUI.hpp"
+#include "solve.h"
 
 using namespace RUSH;
 
