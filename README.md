@@ -1,6 +1,8 @@
 # Rush Hour Solver
 
-It is a solver of a sliding block puzzle [Rush Hour](https://en.wikipedia.org/wiki/Rush_Hour_(puzzle)) implemented in C++ with fltk. This project is the second project of SJTU 2023 Fall Course CS2309.
+It is a solver of a sliding block puzzle game [Rush Hour](https://en.wikipedia.org/wiki/Rush_Hour_(puzzle)) implemented in C++ with fltk. This project is the second project of SJTU 2023 Fall Course CS2309 Problem Solving and Practice.
+
+![Rush Hour](https://upload.wikimedia.org/wikipedia/commons/9/9d/Rush_Hour_sliding_block_puzzle.jpg)
 
 ## How to run
 
@@ -12,10 +14,12 @@ Linux is recommended
 
 2. execute the program by `./main`.
 
-## To do:
+## How to use
 
-add the feature that can show the solution step by step when user click another button
+Places cars and trucks onto the board by dragging them by mouse and rotate them by any key of keyboard. You can also load the predesign board by "Load" button and clear the board by "Clear" button.
 
-use file I/O to allow users save their design 
+Click "Start" button the confirm your design and switch to the solving scene.
 
-allow users go back design scene by clicking a button
+Click "Solve" button to show the solving animation and click "last step" or "next step" to stop animation and show the solution step by step.
+
+Click "Design" button to go back for your next try.
