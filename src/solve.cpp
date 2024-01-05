@@ -206,7 +206,7 @@ bool RushBoard::lastStep() {
     return false;
 }
 
-RushWindow::RushWindow(int W, int H, const char *L) : Fl_Window(W, H, L), solving(false) {
+RushWindow::RushWindow(int W, int H, const char *L) : Fl_Double_Window(W, H, L), solving(false) {
     solver = new Solver;
     backgroundImage = new Fl_PNG_Image("./assets/Background.png");
     background = new Fl_Box(0, 0, W, H);
@@ -341,7 +341,7 @@ void RushWindow::StepBackward() {
 }
 
 void RushWindow::resize(int X, int Y, int W, int H) {
-    Fl_Window::resize(X, Y, W, H);
+    Fl_Double_Window::resize(X, Y, W, H);
     int win_W = W, win_H = H;
     int side = std::min(win_W / 3, win_H / 2);
     int canvas_X = (win_W - 3 * side) / 2, canvas_Y = (win_H - 2 * side) / 2;
