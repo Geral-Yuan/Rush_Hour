@@ -299,6 +299,7 @@ int Vehicle::handle(int event) {
         case FL_KEYBOARD: {
             if (dragging) {
                 changeDirection();
+                check();
                 window()->redraw();
                 return 1;
             }

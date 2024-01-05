@@ -2,7 +2,7 @@
 #define SOLVE_H
 
 #include <FL/Fl.H>
-#include <FL/Fl_Window.H>
+#include <FL/Fl_Double_Window.H>
 #include <FL/Fl_Button.H>
 #include <FL/Fl_Box.H>
 #include <FL/Fl_PNG_Image.H>
@@ -55,7 +55,7 @@ class StepLabel : public Fl_Box {
     void reset() { step = 0; }
 };
 
-class RushWindow : public Fl_Window {
+class RushWindow : public Fl_Double_Window {
     Solver *solver;
     Fl_PNG_Image *backgroundImage;
     Fl_Box *background;
